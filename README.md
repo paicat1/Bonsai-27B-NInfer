@@ -32,6 +32,22 @@
 
 > serve 的启停一律由你自己双击 BAT 完成；本工程不主动用隐藏窗口拉起。
 
+### 当前推荐参数配置（作者实测日常档，2026-09-28）
+
+本项目目前推荐使用的启动参数（即 `224K fp4 视觉` 档的生成命令，作者本人日常使用）：
+
+```
+[env NINFER_TERNARY_S8=1] J:\Bonsai\landing\repos\ninfer-4090-windows\_build_5080\apps\ninfer-serve.exe
+  J:\Bonsai\landing\artifacts\Ternary-Bonsai-2-27B.ninfer
+  --host 127.0.0.1 --port 18787
+  --default-thinking-budget 32000
+  --kv-dtype nvfp4 --kv-capacity 229376 --max-context 229376
+  --spec dflash2 --draft-tokens 7 --lm-head-draft
+  --vision --temperature 0.6 --top-p 0.95 --preserve-thinking --tolerant-tool-calls
+```
+
+参数要点：**nvfp4 KV**（224K 满上下文，省显存）+ **DFlash2 K=7**（英文/代码投机）+ **--vision**（视觉开启）+ **思考预算 32000** + **S8 prefill 内核**。对应启动器里「224K fp4 视觉」档。在此配置下，**prefill 实测峰值达 2.45k tok/s**（见下）。
+
 ## 目录导航
 
 | 路径 | 内容 |
@@ -57,7 +73,7 @@
 - **快（5080 实测）**：
   - **224K+MTP3**（MMA 内核）：峰值解码 **250 t/s**、均值 **180 t/s**、prefill **1.3k tok/s**；
   - **128K+DFlash7**：峰值解码 **355 t/s**、均值 **225 t/s**、prefill **1.4k tok/s**，日常工作 180-280 t/s；
-  - **S8 预填充内核**：prefill 最高 **1.85k tok/s**，峰值解码**摸到 396 t/s**。
+  - **S8 预填充内核**：prefill 最高 **2.45k tok/s**（A3 调度优化后，09-28 实测），峰值解码**摸到 396 t/s**。
 - **视觉**：引擎支持 `--vision`（内置视觉塔），启动器"视觉"开关开启即可用图片输入（默认档关闭）。
 - **长思考异常分两类**（易混淆，排查先定性）：① `frontend.cpp` 单请求空收尾（引擎 Bug，已修复，见 `docs/ninfer-思考区空正文问题与治本方案-20260927.md`）；② 雷霆大思考跨轮死循环（客户端多条件耦合、引擎无缺陷，见 `docs/雷霆大思考死循环-客户端复合现象分析.md`）。前者改引擎、后者靠业务层规避，根因与处理完全不同。
 
@@ -67,7 +83,7 @@
 
 ## 近期优化速览（2026-09-27 ~ 09-28）
 
-- **A3 token-grid 调度移植**（引擎 `engine-main` `4c9a4f5`）：沈三殊"sched3"调度的核心优化——token tile 铺进 `blockIdx.y`，prefill 实测约 **+31%**，逐位一致不改变数值。只做 s8 + wide_t 两路，`NINFER_TERNARY_TOKEN_GRID` 开关（默认开）。
+- **A3 token-grid 调度移植**（引擎 `engine-main` `4c9a4f5`）：沈三殊"sched3"调度的核心优化——token tile 铺进 `blockIdx.y`，prefill 实测约 **+31%**（实测峰值 **2.45k tok/s**，09-28），逐位一致不改变数值。只做 s8 + wide_t 两路，`NINFER_TERNARY_TOKEN_GRID` 开关（默认开）。
 - **nvfp4 KV 长上下文放开**（`2c7a1ea`）：224K/256K 的 KV 白名单从「仅 k8v4」扩为「k8v4 或 nvfp4」——nvfp4 KV 每 token 288 字节，比 k8v4（401 字节）**省约 28%** 显存；配套新增 `224K fp4 视觉` 档。
 - **上下文档位扩充**：启动器新增 **150K/160K/170K/180K/200K** 档，224k 修正为 229376（名副其实）。
 - **思考区空收尾修复**（方案 C，引擎 `145bccb`）：长思考模型 stop 时强制切正文区，杜绝"想完无正文"，实测 78 请求无空收尾。
