@@ -22,6 +22,14 @@
 双击根目录 `起服-*.bat`（各档位现成命令，改路径即用）。档位一览与实测速度见引擎 `README.md` 第三节表格。
 图形化方式：运行 `ninfer_launcher.py`（GUI 启动器，可下拉选上下文/KV/投机/思考预算/prefill/视觉 档并保存 profile）。
 
+### 启动器（GUI）使用说明
+
+`ninfer_launcher.py` 是本项目的图形化启动入口（作者分发包只有 bat，本项目自建 GUI）。左侧参数面板可下拉配置：**场景预设**（内置组合一键切换）、**思考模式/预算**、**输出上限**、**构建版本**（新版 A+B / 旧版）、**KV 类型**（bf16/int8/fp8/nvfp4/k8v4/rk4v4）、**KV 容量**、**上下文长度**（32K~256K）、**投机解码**（MTP K1-5 / DFlash2 K1-15）、**prefill 内核**（S8 最快 / wide / mma）、**视觉**、**并发度**、**采样**、**保留推理**。右侧实时显示生成的启动命令行，底部可保存/加载/删除组合 profile。
+
+> 截图即本次新增的 **`224K fp4 视觉`** 档（nvfp4 KV + 224K 上下文 + DFlash2 K=7 + 视觉开启）：
+
+![启动器GUI](docs/images/ninfer-launcher-gui-20260928.png)
+
 > serve 的启停一律由你自己双击 BAT 完成；本工程不主动用隐藏窗口拉起。
 
 ## 目录导航
@@ -57,10 +65,29 @@
 > 
 > ![modlens-5080-实测](docs/images/modlens-5080-20260927.png)
 
-## 数据口径与上游
+## 近期优化速览（2026-09-27 ~ 09-28）
 
-- 本仓只记录**有证据的**结论；证据不足处构建史中一律标【待校订】，没掌握的明说没掌握（防编造纪律）。
-- 引擎上游作者工作看上游仓库；本仓列的是"我们怎么跑起来的每一步，要看什么资料/命令"。
+- **A3 token-grid 调度移植**（引擎 `engine-main` `4c9a4f5`）：沈三殊"sched3"调度的核心优化——token tile 铺进 `blockIdx.y`，prefill 实测约 **+31%**，逐位一致不改变数值。只做 s8 + wide_t 两路，`NINFER_TERNARY_TOKEN_GRID` 开关（默认开）。
+- **nvfp4 KV 长上下文放开**（`2c7a1ea`）：224K/256K 的 KV 白名单从「仅 k8v4」扩为「k8v4 或 nvfp4」——nvfp4 KV 每 token 288 字节，比 k8v4（401 字节）**省约 28%** 显存；配套新增 `224K fp4 视觉` 档。
+- **上下文档位扩充**：启动器新增 **150K/160K/170K/180K/200K** 档，224k 修正为 229376（名副其实）。
+- **思考区空收尾修复**（方案 C，引擎 `145bccb`）：长思考模型 stop 时强制切正文区，杜绝"想完无正文"，实测 78 请求无空收尾。
+- **启动器 GUI 化 + S8 prefill**：`ninfer_launcher.py` 图形界面（上下文/KV/投机/思考预算/prefill/视觉 下拉 + profile 保存）；s8 int8 prefill 内核冷 prefill 1.63k tok/s。
+
+详细记录见 `docs/项目构建史.md` 第十节。
+
+## 鸣谢（上游作者）
+
+本项目是站在巨人的肩膀上落地，向所有上游作者与贡献者致谢：
+
+- **沈三殊（shensanshu）**：三元-Bonsai 技术论文作者，发布 `shensanshu/ninfer-ada-ternary`（ModelScope），提供三元补丁、pack.py 转换、MAPPING 与 verify 工具链——本项目的技术起点。
+- **Neroued**：NInfer 官方上游作者（C++20/CUDA，DFlash2/ReplaySSM/Paged KV），模型制品发布者。
+- **UDPSendToFailed**：原始 **RTX 4090 fork** 创造者，WDDM evictable-budget bypass 先驱，E8 lattice（Conway-Sloane）几何量化 / rk4v4-e8 发明者——我们的 k8v4 属该量化族变体。
+- **CraneBW**：`ninfer-ternary-bonsai-ada` 第三方优化内核作者，本项目合并其内核后 prefill 2.41x、日常档 +59%。
+- **Ambolio**：`ninfer-4090-windows` 整合者（v1.0.8 = 多 fork 融合），本地引擎基线来源。
+- **sergiuszm**（sm_89 kernel 优化 / rk4v4-e8 适配）、**natpate**（Win32/MSVC 可移植层）、**headpiece747**（5090 Windows MSVC 基座）、**Don-Chad**（3090 Ampere 先驱）、**dylanbrodiefafard / nmorgowicz**（v1.0.8 两个 frontend port）。
+- **模型根基**：Qwen Team（阿里）架构 + unsloth NVFP4 量化 + z-lab DFlash 权重。
+
+详细上游血统见 `docs/项目构建史.md` §二。
 
 ## 分支说明（本次变更）
 
