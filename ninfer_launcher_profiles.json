@@ -238,5 +238,20 @@
     "conc": "1",
     "sample": "default",
     "preserve": "on"
+  },
+  "224K fp4 视觉": {
+    "think": "on",
+    "tb": "32000",
+    "maxout": "default",
+    "build": "new",
+    "kv": "nvfp4",
+    "kvcap": "224k",
+    "ctx": "224k",
+    "spec": "d7",
+    "prefill": "s8",
+    "vision": "on",
+    "conc": "1",
+    "sample": "default",
+    "preserve": "on"
   }
 }

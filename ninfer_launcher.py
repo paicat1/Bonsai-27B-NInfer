@@ -225,15 +225,17 @@ class ToolTip:
 # ---------------------------------------------------------------
 def validate(combo):
     kv = combo.get("kv"); ctx = combo.get("ctx"); spec = combo.get("spec")
-    if ctx == "256k" and kv != "k8v4":
-        return "256K 上下文只支持 k8v4（fp8/bf16 显存不够）"
-    if ctx == "224k" and kv != "k8v4":
-        return "224K 上下文只支持 k8v4"
+    # 224K/256K 长上下文可用 k8v4 或 nvfp4（nvfp4 4bit 更省显存）；fp8/bf16/int8/rk4v4 放不下
+    long_ctx_kv_ok = kv in ("k8v4", "nvfp4")
+    if ctx == "256k" and not long_ctx_kv_ok:
+        return "256K 上下文只支持 k8v4 或 nvfp4（fp8/bf16 显存不够）"
+    if ctx == "224k" and not long_ctx_kv_ok:
+        return "224K 上下文只支持 k8v4 或 nvfp4"
     if spec.startswith("d"):
-        # 224K/256K 显存必须 k8v4（bf16 放不下）；DFlash 草案用独立 bf16 小窗口，不受主 KV 影响
+        # 224K/256K 显存必须 k8v4 或 nvfp4（bf16 放不下）；DFlash 草案用独立 bf16 小窗口，不受主 KV 影响
         if ctx in ("224k", "256k"):
-            if kv != "k8v4":
-                return "DFlash2 + 长上下文只能用 k8v4 KV"
+            if not long_ctx_kv_ok:
+                return "DFlash2 + 长上下文只能用 k8v4 或 nvfp4 KV"
         elif ctx == "32k":
             if kv != "bf16":
                 return "DFlash2 在 32K 建议用 bf16 KV（中文接受率场景）"
