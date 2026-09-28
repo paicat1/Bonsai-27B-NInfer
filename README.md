@@ -95,12 +95,12 @@
 
 本项目是站在巨人的肩膀上落地，向所有上游作者与贡献者致谢：
 
-- **沈三殊（shensanshu）**：三元-Bonsai 技术论文作者，发布 `shensanshu/ninfer-ada-ternary`（ModelScope），提供三元补丁、pack.py 转换、MAPPING 与 verify 工具链——本项目的技术起点。
-- **Neroued**：NInfer 官方上游作者（C++20/CUDA，DFlash2/ReplaySSM/Paged KV），模型制品发布者。
-- **UDPSendToFailed**：原始 **RTX 4090 fork** 创造者，WDDM evictable-budget bypass 先驱，E8 lattice（Conway-Sloane）几何量化 / rk4v4-e8 发明者——我们的 k8v4 属该量化族变体。
-- **CraneBW**：`ninfer-ternary-bonsai-ada` 第三方优化内核作者，本项目合并其内核后 prefill 2.41x、日常档 +59%。
-- **Ambolio**：`ninfer-4090-windows` 整合者（v1.0.8 = 多 fork 融合），本地引擎基线来源。
-- **sergiuszm**（sm_89 kernel 优化 / rk4v4-e8 适配）、**natpate**（Win32/MSVC 可移植层）、**headpiece747**（5090 Windows MSVC 基座）、**Don-Chad**（3090 Ampere 先驱）、**dylanbrodiefafard / nmorgowicz**（v1.0.8 两个 frontend port）。
+- **沈三殊（shensanshu）**：三元-Bonsai 技术论文作者，发布 [`shensanshu/ninfer-ada-ternary`](https://modelscope.cn/models/shensanshu/ninfer-ada-ternary)（ModelScope），提供三元补丁、pack.py 转换、MAPPING 与 verify 工具链——本项目的技术起点。
+- **Neroued**：NInfer 官方上游作者（C++20/CUDA，DFlash2/ReplaySSM/Paged KV），模型制品发布者。[`Neroued/ninfer`](https://github.com/Neroued/ninfer)
+- **UDPSendToFailed**：原始 **RTX 4090 fork** 创造者，WDDM evictable-budget bypass 先驱，E8 lattice（Conway-Sloane）几何量化 / rk4v4-e8 发明者——我们的 k8v4 属该量化族变体。[`UDPSendToFailed/ninfer-4090`](https://github.com/UDPSendToFailed/ninfer-4090)
+- **CraneBW**：`ninfer-ternary-bonsai-ada` 第三方优化内核作者（[`CraneBW/ninfer-ternary-bonsai-ada`](https://github.com/CraneBW/ninfer-ternary-bonsai-ada)），本项目合并其内核后 prefill 2.41x、日常档 +59%。
+- **Ambolio**：`ninfer-4090-windows` 整合者（v1.0.8 = 多 fork 融合），本地引擎基线来源（该仓库已转私有，故不附链接）。
+- **sergiuszm**（sm_89 kernel 优化 / rk4v4-e8 适配）、**natpate**（Win32/MSVC 可移植层）、**headpiece747**（5090 Windows MSVC 基座）、**Don-Chad**（3090 Ampere 先驱）、**dylanbrodiefafard / nmorgowicz**（v1.0.8 两个 frontend port）：[sergiuszm](https://github.com/sergiuszm) · [natpate](https://github.com/natpate) · [headpiece747](https://github.com/headpiece747) · [Don-Chad](https://github.com/Don-Chad) · [dylanbrodiefafard](https://github.com/dylanbrodiefafard) · [nmorgowicz](https://github.com/nmorgowicz)
 - **模型根基**：Qwen Team（阿里）架构 + unsloth NVFP4 量化 + z-lab DFlash 权重。
 
 详细上游血统见 `docs/项目构建史.md` §二。
