@@ -83,7 +83,7 @@
 
 ## 近期优化速览（2026-09-27 ~ 09-28）
 
-- **A3 token-grid 调度移植**（引擎 `engine-main` `4c9a4f5`）：沈三殊"sched3"调度的核心优化——token tile 铺进 `blockIdx.y`，prefill 实测约 **+31%**（实测峰值 **2.45k tok/s**，09-28），逐位一致不改变数值。只做 s8 + wide_t 两路，`NINFER_TERNARY_TOKEN_GRID` 开关（默认开）。
+- **A3 token-grid 调度移植**（引擎 `engine-main` `4c9a4f5`）：**针对 prefill（预填充）的专项优化**——沈三殊"sched3"调度的核心，把 token tile 铺进 `blockIdx.y`，大幅提升 prefill 并行度，**prefill 实测 +31%**（实测峰值 **2.45k tok/s**，09-28，为昨日优化的直接成果），逐位一致不改变数值。只做 s8 + wide_t 两路，`NINFER_TERNARY_TOKEN_GRID` 开关（默认开）。
 - **nvfp4 KV 长上下文放开**（`2c7a1ea`）：224K/256K 的 KV 白名单从「仅 k8v4」扩为「k8v4 或 nvfp4」——nvfp4 KV 每 token 288 字节，比 k8v4（401 字节）**省约 28%** 显存；配套新增 `224K fp4 视觉` 档。
 - **上下文档位扩充**：启动器新增 **150K/160K/170K/180K/200K** 档，224k 修正为 229376（名副其实）。
 - **思考区空收尾修复**（方案 C，引擎 `145bccb`）：长思考模型 stop 时强制切正文区，杜绝"想完无正文"，实测 78 请求无空收尾。
