@@ -1,6 +1,6 @@
-# Bowsai-27B-NInfer — RTX 5080 三元量化部署工程
+# Bonsai-27B-NInfer — RTX 5080 三元量化部署工程
 
-> 在 **RTX 5080（16GB，sm_120a）** 上把 **Bowsai-2-27B 三元量化模型**（`Ternary-Bonsai-2-27B.ninfer`，2.125bit / 9.81 GiB / 1192 对象）与 **NInfer 引擎** 跑通、压榨到极限的完整工程。
+> 在 **RTX 5080（16GB，sm_120a）** 上把 **Bonsai-2-27B 三元量化模型**（`Ternary-Bonsai-2-27B.ninfer`，2.125bit / 9.81 GiB / 1192 对象）与 **NInfer 引擎** 跑通、压榨到极限的完整工程。
 > 技术起点：沈三殊《三元-Bonsai-27B-NInfer-移植-技术论文-20260920》。本项目自 2026-09-21 立项起全程落地于本仓（`paicat1/Bonsai-27B-NInfer`）。
 
 ---
