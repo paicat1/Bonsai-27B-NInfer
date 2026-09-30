@@ -19,6 +19,11 @@ APPS_DIR     = os.path.join(BUILD_DIR, "apps")
 ARTIFACT     = r"J:\Bonsai\landing\artifacts\Ternary-Bonsai-2-27B.ninfer"
 CONFIG_FILE  = os.path.join(r"J:\Bonsai", "ninfer_launcher_profiles.json")
 PORT_DEFAULT = 18787
+# 模型选择：正常 + CRACK(去审查版) 两个独立制品（artifacts 目录 gitignore 不入库）
+MODEL_OPTIONS = {
+    "normal": ("正常(Bonsai 三元)", r"J:\Bonsai\landing\artifacts\Ternary-Bonsai-2-27B.ninfer"),
+    "crack":  ("CRACK(去审查版)",  r"J:\Bonsai\landing\artifacts\Bonsai-2-27B-CRACK.ninfer"),
+}
 # serve_tee 必须用 python.exe（带控制台窗口）来显示日志，不能用 pythonw：
 # 本启动器 GUI 用 pythonw 运行时 sys.executable 指向 pythonw.exe，用它启动
 # serve_tee 会得到无控制台窗口，日志无法显示在 CMD 窗口（只会落盘）。
@@ -133,6 +138,7 @@ PREFILL_OPTIONS = {
 }
 
 DIMENSIONS = [
+    ("model",   "模型",     MODEL_OPTIONS),
     ("think",   "思考模式", THINK_OPTIONS),
     ("tb",      "思考预算", TB_OPTIONS),
     ("maxout",  "输出上限", MAXOUT_OPTIONS),
@@ -149,14 +155,15 @@ DIMENSIONS = [
 ]
 
 # 默认选中值
-DEFAULTS = {"think": "on", "tb": "none", "maxout": "default", "build": "new", "kv": "k8v4", "kvcap": "default", "ctx": "128k", "spec": "d7", "prefill": "s8", "vision": "off", "conc": "1", "sample": "default", "preserve": "off"}
+DEFAULTS = {"model": "normal", "think": "on", "tb": "none", "maxout": "default", "build": "new", "kv": "k8v4", "kvcap": "default", "ctx": "128k", "spec": "d7", "prefill": "s8", "vision": "off", "conc": "1", "sample": "default", "preserve": "off"}
 
 
 # ---------------------------------------------------------------
 # 配置提示（悬停每个选项显示）与场景预设（一键推荐组合）
 # ---------------------------------------------------------------
 DIM_TIPS = {
-    "think":   "思考模式。开=质量好但生成大量思考 token、慢；关=直出快但工具编排可能不稳。短任务可关。",
+    "model":   "推理模型：正常（Bonsai 三元）或 CRACK（去审查版）。切换后需重启 serve 生效。",
+    "think":   "思考模式。开=质量好但生成大量思考、慢；关=直出快但工具编排可能不稳。短任务可关。",
     "tb":      "思考预算上限（每回合最多思考 token）。越小越省时；审核/批量建议小；长逻辑建议大。",
     "maxout":  "单次输出上限（含思考）。限制可防失控浪费；需大于任务实际输出量。",
     "build":   "构建版本：新版(apps) / 旧版(09-22)。",
@@ -256,7 +263,9 @@ def build_command(combo, port=None):
     port = port or PORT_DEFAULT
     build_val = combo.get("build", "new")
     exe = BUILD_OPTIONS[build_val][1] if build_val in BUILD_OPTIONS else BUILD_OPTIONS["new"][1]
-    cmd = [exe, ARTIFACT, "--host", "127.0.0.1", "--port", str(port)]
+    model_val = combo.get("model", "normal")
+    artifact = MODEL_OPTIONS[model_val][1] if model_val in MODEL_OPTIONS else MODEL_OPTIONS["normal"][1]
+    cmd = [exe, artifact, "--host", "127.0.0.1", "--port", str(port)]
     cmd.extend(THINK_OPTIONS[combo.get("think", "on")][1])
     tb = combo.get("tb", "none")
     if tb != "none":
