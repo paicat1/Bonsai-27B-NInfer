@@ -71,12 +71,18 @@
 
 | 档位 | 命令要点 | 5080 实测 |
 |---|---|---|
+| **启动器默认（现行）**<br>`--kv-dtype nvfp4 --kv-capacity 184320 --max-context 184320 --spec dflash2 --draft-tokens 7 --lm-head-draft` | 同左 | **10-01 真实负载配对**：端到端 **230~245 tok/s**、解码峰值 **303 t/s**、prefill 最高 2.68k tok/s |
+| **启动器省显存档**<br>同上但 `--spec mtp --draft-tokens 3`（去 `--lm-head-draft`） | 同左 | 端到端 **195 tok/s**、解码稳 118~182 t/s，**比 DFlash2 少占 1.65 GiB**（草稿权重 7.45 vs 9.10 GiB） |
 | 日常 FP8 | `--kv-dtype fp8 --spec mtp --draft-tokens 2 --max-concurrency 2` | 均值 114.3 t/s |
 | 224K MTP3 | `--max-context 229376 --kv-dtype k8v4 --spec mtp --draft-tokens 3`（MMA 预填充内核） | 峰值 250 t/s / 均值 180 t/s / prefill 1.3k tok/s |
 | 128K DFlash7 | `--max-context 131072 --kv-dtype bf16 --spec dflash2 --draft-tokens 7 --lm-head-draft` | 峰值 355 t/s / 均值 225 t/s / prefill 1.4k tok/s；日常工作 180-280 t/s |
 | DFlash2 英文 | `--spec dflash2 --draft-tokens 7 --lm-head-draft` | 139.5（中文勿用）|
 
 > **S8 内核更新后（更快）**：prefill 最高 **2.85k tok/s**，峰值解码**摸到 396 t/s**（MMA/S8 内核对比见启动器 prefill 下拉）。
+> **口径提示（10-01）**：上条 2.85k / 396 保留不改。日志记的是 5 秒窗口平均与整请求平均，界面显示的是瞬时值，**尖峰高于平均属正常**；全量扫 298 份日志（6,272 条 prefill）后日志内最高为 2,730。
+
+- **投机档位（10-01 定案）**：`--spec dflash2 --draft-tokens 7 --lm-head-draft` = 速度优先（启动器默认）；`--spec mtp --draft-tokens 3` = 省显存。**K 越大不一定越快**：DFlash2 `K>=10` 断崖式崩塌（比不开投机还慢 70%+，属禁用区），MTP `K=1~5` 吞吐基本持平。判据必须是**端到端吞吐**（Σoutput/Σtotal），不是单请求 decode 均值（受输出长度偏置）；**接受率是强内容依赖指标，不能用合成填充文本测**（同档跨内容差 2.5 倍）。
+- **`--prefill-chunk`（10-01 三档扫描）**：默认 **1024 即甜点**。256 是坑（prefill **−40%**，小 chunk 让 prefill 单元边界往返放大 4 倍）；4096 与 1024 打平（+0.9%）但 KV runtime 多占 **0.68 GiB**。短 prompt 上该参数被 `min` 钳位为空操作。
 
 - 每个档位**要看对应 BAT 的完整参数**（`起服-*.bat` 就是现成样板，改路径即用）。
 - 具体参数语义看 `ninfer-serve --help`。
