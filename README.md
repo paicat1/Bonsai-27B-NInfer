@@ -90,6 +90,8 @@
 
 **下面每一个 HTML 都是 Bonsai-2-27B（三元量化）模型在本机跑出来的，不是人手写的代码。** 这是"智力不塌"的侧证：模型能独立写出现在就能跑的图形程序。完整清单与查看方式见 [`docs/demos/README.md`](docs/demos/README.md)。
 
+> 📹 **视频解说**：想直接看项目效果，看这里 —— [B 站：三元量化模型实机产出解说](https://www.bilibili.com/video/BV1sHYN6uEKT/)（每个作品的生成过程、运行效果、现场解说）。
+
 ### 🌩️ 灯塔风暴 · Canvas 2D · 14.5 KB · 零依赖
 
 ![灯塔风暴](docs/images/demos/lighthouse-storm-20261001.png)
