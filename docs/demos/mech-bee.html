@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>机械蜜蜂 · Three.js 交互</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; background: #05070d; }
+  canvas { display: block; }
+
+  #vignette {
+    position: fixed; inset: 0; pointer-events: none; z-index: 2;
+    background: radial-gradient(ellipse at center, transparent 42%, rgba(0,0,0,0.78) 100%);
+  }
+
+  #hud {
+    position: fixed; inset: 0; pointer-events: none; z-index: 3;
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif; color: #cfe8ff;
+  }
+  #hud .title { position: absolute; top: 24px; left: 28px; }
+  #hud .title h1 {
+    font-size: 26px; font-weight: 700; letter-spacing: 0.18em;
+    background: linear-gradient(90deg, #00e5ff, #c9a24b, #ff6b00);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  #hud .title p { margin-top: 6px; font-size: 11px; letter-spacing: 0.3em; color: #6fa8d8; opacity: 0.85; }
+  #hud .tag {
+    position: absolute; top: 24px; right: 28px;
+    font-size: 10px; letter-spacing: 0.25em; color: #4a7fa8;
+    border: 1px solid rgba(0,229,255,0.25); padding: 6px 10px; border-radius: 4px;
+    background: rgba(0,20,40,0.3); backdrop-filter: blur(6px);
+  }
+  #hud .hint {
+    position: absolute; bottom: 22px; left: 28px;
+    font-size: 11px; line-height: 1.9; color: #7fa8d8; letter-spacing: 0.06em;
+  }
+  #hud .hint b { color: #00e5ff; font-weight: 600; }
+
+  #loader {
+    position: fixed; inset: 0; z-index: 10;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #05070d; color: #00e5ff;
+    font-family: "Segoe UI", sans-serif; font-size: 13px; letter-spacing: 0.2em;
+    text-align: center; padding: 20px;
+  }
+  #loader .sub { margin-top: 10px; font-size: 11px; letter-spacing: 0.1em; color: #5a8aa8; line-height: 1.7; }
+</style>
+</head>
+<body>
+<div id="vignette"></div>
+
+<div id="hud">
+  <div class="title">
+    <h1>MECH·BEE 01</h1>
+    <p>机械蜜蜂 · 全几何体构建 · THREE.JS</p>
+  </div>
+  <div class="tag">CINEMATIC // 3D</div>
+  <div class="hint">
+    <b>拖拽</b> 环绕浏览 &nbsp;·&nbsp; <b>滚轮</b> 缩放<br/>
+    <b>移动鼠标</b> 蜜蜂会转向注视你 &nbsp;·&nbsp; <b>点击</b> 加速扇翅
+  </div>
+</div>
+
+<div id="loader">
+  <div id="loaderText">LOADING 3D SCENE …</div>
+  <div id="loaderSub" class="sub">MECHANICAL BEE</div>
+</div>
+
+<script>
+/* ============ Three.js 加载器（经典脚本，双击即可打开） ============ */
+(function () {
+  var loader = document.getElementById('loader');
+  var text   = document.getElementById('loaderText');
+  var sub    = document.getElementById('loaderSub');
+
+  var SOURCES = [
+    { url: 'three.min.js', label: '本地' },
+    { url: 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js', label: 'CDN-1' },
+    { url: 'https://unpkg.com/three@0.160.0/build/three.min.js', label: 'CDN-2' },
+    { url: 'https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js', label: 'CDN-3' }
+  ];
+
+  function loadScript(url, timeout) {
+    return new Promise(function (resolve, reject) {
+      var timer = setTimeout(function () { reject(new Error('timeout')); }, timeout || 6000);
+      var s = document.createElement('script');
+      s.src = url;
+      s.onload  = function () { clearTimeout(timer); resolve(); };
+      s.onerror = function () { clearTimeout(timer); reject(new Error('error')); };
+      document.head.appendChild(s);
+    });
+  }
+
+  (async function () {
+    for (var i = 0; i < SOURCES.length; i++) {
+      var src = SOURCES[i];
+      sub.textContent = '正在加载 Three.js … ' + src.label;
+      try {
+        await loadScript(src.url, i === 0 ? 2000 : 6000);
+        if (window.THREE) break;
+      } catch (e) { /* 尝试下一个来源 */ }
+    }
+
+    if (!window.THREE) {
+      text.textContent = '3D 引擎加载失败';
+      text.style.color = '#ff5555';
+      sub.innerHTML = '请检查网络连接，或把此文件夹用本地服务器打开<br>' +
+        '<span style="color:#ff9999;">例如：python -m http.server</span>';
+      return;
+    }
+
+    window.__beeReady = true;
+    loader.style.transition = 'opacity 0.6s ease';
+    loader.style.opacity = '0';
+    setTimeout(function () { loader.style.display = 'none'; }, 600);
+    startScene(window.THREE);
+  })();
+})();
+</script>
+
+<script>
+/* ============ 自定义轨道控制器（替代 OrbitControls，无需额外依赖） ============ */
+function createOrbit(camera, dom, target) {
+  var t = new THREE.Vector3().subVectors(camera.position, target);
+  var radius = t.length();
+  var phi   = Math.acos(Math.max(-1, Math.min(1, t.y / radius)));
+  var theta = Math.atan2(t.x, t.z);
+  var cur = { theta: theta, phi: phi, radius: radius };
+  var tgt = { theta: theta, phi: phi, radius: radius };
+  var drag = { active: false, x: 0, y: 0 };
+  var MIN_R = 3, MAX_R = 9, MIN_PHI = 0.15, MAX_PHI = 1.45;
+  var clamp = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
+
+  dom.addEventListener('mousedown', function (e) {
+    if (e.button !== 0) return;
+    drag.active = true; drag.x = e.clientX; drag.y = e.clientY;
+  });
+  window.addEventListener('mousemove', function (e) {
+    if (!drag.active) return;
+    tgt.theta -= (e.clientX - drag.x) * 0.005;
+    tgt.phi   = clamp(tgt.phi - (e.clientY - drag.y) * 0.005, MIN_PHI, MAX_PHI);
+    drag.x = e.clientX; drag.y = e.clientY;
+  });
+  window.addEventListener('mouseup',   function () { drag.active = false; });
+  window.addEventListener('mouseleave',function () { drag.active = false; });
+
+  dom.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    tgt.radius = clamp(tgt.radius * (e.deltaY > 0 ? 1.08 : 1 / 1.08), MIN_R, MAX_R);
+  }, { passive: false });
+
+  var touch = { active: false, x: 0, y: 0, d: 0 };
+  function dist(a, b) { return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); }
+  dom.addEventListener('touchstart', function (e) {
+    if (e.touches.length === 1) {
+      touch.active = true; touch.x = e.touches[0].clientX; touch.y = e.touches[0].clientY;
+    } else if (e.touches.length === 2) {
+      touch.active = true; touch.d = dist(e.touches[0], e.touches[1]);
+    }
+  }, { passive: false });
+  dom.addEventListener('touchmove', function (e) {
+    e.preventDefault();
+    if (!touch.active) return;
+    if (e.touches.length === 1) {
+      tgt.theta -= (e.touches[0].clientX - touch.x) * 0.005;
+      tgt.phi   = clamp(tgt.phi - (e.touches[0].clientY - touch.y) * 0.005, MIN_PHI, MAX_PHI);
+      touch.x = e.touches[0].clientX; touch.y = e.touches[0].clientY;
+    } else if (e.touches.length === 2) {
+      var d = dist(e.touches[0], e.touches[1]);
+      tgt.radius = clamp(tgt.radius * (touch.d / d), MIN_R, MAX_R);
+      touch.d = d;
+    }
+  }, { passive: false });
+  dom.addEventListener('touchend', function () { touch.active = false; });
+
+  return {
+    update: function () {
+      cur.theta   += (tgt.theta   - cur.theta)   * 0.08;
+      cur.phi     += (tgt.phi     - cur.phi)     * 0.08;
+      cur.radius  += (tgt.radius  - cur.radius)  * 0.12;
+      camera.position.x = target.x + cur.radius * Math.sin(cur.phi) * Math.sin(cur.theta);
+      camera.position.y = target.y + cur.radius * Math.cos(cur.phi);
+      camera.position.z = target.z + cur.radius * Math.sin(cur.phi) * Math.cos(cur.theta);
+      camera.lookAt(target);
+    }
+  };
+}
+
+/* ============ 场景构建 ============ */
+function startScene(THREE) {
+  /* ---------- 程序生成环境反射贴图 ---------- */
+  function makeEnv(size) {
+    size = size || 512;
+    var base = '#050812';
+    function make(glows) {
+      var c = document.createElement('canvas');
+      c.width = c.height = size;
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = base;
+      ctx.fillRect(0, 0, size, size);
+      for (var i = 0; i < glows.length; i++) {
+        var g = glows[i];
+        var grad = ctx.createRadialGradient(g.x * size, g.y * size, 0, g.x * size, g.y * size, (g.r || 0.4) * size);
+        grad.addColorStop(0, g.c);
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, size, size);
+      }
+      return c;
+    }
+    var faces = [
+      make([{ x: 0.30, y: 0.35, r: 0.55, c: 'rgba(255,170,60,0.50)' }]),
+      make([{ x: 0.70, y: 0.70, r: 0.45, c: 'rgba(70,150,255,0.35)' }]),
+      make([{ x: 0.50, y: 0.50, r: 0.60, c: 'rgba(255,200,120,0.45)' }]),
+      make([{ x: 0.50, y: 0.50, r: 0.50, c: 'rgba(120,80,255,0.25)' }]),
+      make([{ x: 0.50, y: 0.40, r: 0.50, c: 'rgba(80,200,255,0.30)' }]),
+      make([{ x: 0.50, y: 0.50, r: 0.40, c: 'rgba(255,120,200,0.20)' }])
+    ];
+    var tex = new THREE.CubeTexture(faces);
+    tex.needsUpdate = true;
+    return tex;
+  }
+
+  /* ---------- 渲染器 / 场景 / 相机 ---------- */
+  var renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  document.body.appendChild(renderer.domElement);
+
+  var scene = new THREE.Scene();
+  var env = makeEnv();
+  scene.background = env;
+  scene.environment = env;
+  scene.fog = new THREE.FogExp2(0x05070d, 0.03);
+
+  var camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.set(4.6, 2.4, 6.6);
+
+  var controls = createOrbit(camera, renderer.domElement, new THREE.Vector3(0, 0.2, 0));
+
+  /* ---------- 材质 ---------- */
+  var MAT = {
+    light:  new THREE.MeshStandardMaterial({ color: 0xc9cdd4, metalness: 0.95, roughness: 0.18 }),
+    dark:   new THREE.MeshStandardMaterial({ color: 0x2e3440, metalness: 0.90, roughness: 0.35 }),
+    gold:   new THREE.MeshStandardMaterial({ color: 0xd4a017, metalness: 0.95, roughness: 0.20 }),
+    panel:  new THREE.MeshStandardMaterial({ color: 0x181c24, metalness: 0.85, roughness: 0.50 }),
+    glowCyan:  new THREE.MeshStandardMaterial({ color: 0x0a1420, emissive: 0x00d8ff, emissiveIntensity: 2.6, metalness: 0.3, roughness: 0.3 }),
+    glowAmber: new THREE.MeshStandardMaterial({ color: 0x1a1206, emissive: 0xffb300, emissiveIntensity: 2.6, metalness: 0.3, roughness: 0.3 }),
+    glowPink:  new THREE.MeshStandardMaterial({ color: 0x120612, emissive: 0xff4fa3, emissiveIntensity: 2.2, metalness: 0.3, roughness: 0.3 }),
+    wing:     new THREE.MeshStandardMaterial({ color: 0xcfe8ff, transparent: true, opacity: 0.30, metalness: 0.1, roughness: 0.15, side: THREE.DoubleSide, emissive: 0x88ccff, emissiveIntensity: 0.12 }),
+    glass:    new THREE.MeshStandardMaterial({ color: 0x88ccff, transparent: true, opacity: 0.25, metalness: 0.3, roughness: 0.10, side: THREE.DoubleSide })
+  };
+
+  /* ---------- 辅助函数 ---------- */
+  function mesh(geo, mat, opts) {
+    opts = opts || {};
+    var m = new THREE.Mesh(geo, mat);
+    if (opts.pos) m.position.copy(opts.pos);
+    if (opts.rot) m.rotation.set(opts.rot.x || 0, opts.rot.y || 0, opts.rot.z || 0);
+    m.castShadow = opts.cast !== false;
+    m.receiveShadow = opts.recv;
+    return m;
+  }
+
+  function addSeg(group, from, to, radius) {
+    var dir = new THREE.Vector3().subVectors(to, from);
+    var len = dir.length();
+    var mid = dir.add(from).clone().multiplyScalar(0.5);
+    var m = new THREE.Mesh(new THREE.CylinderGeometry(radius * 0.85, radius, len, 10), MAT.light);
+    m.position.copy(mid);
+    m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize());
+    m.castShadow = true;
+    group.add(m);
+  }
+
+  function createGear(o) {
+    var r = o.r, teeth = o.teeth, thickness = o.thickness, color = o.color;
+    var mat = new THREE.MeshStandardMaterial({ color: color, metalness: 0.95, roughness: 0.25 });
+    var g = new THREE.Group();
+    var Rdisc = r * 0.78;
+
+    // 主圆盘（盘面在 YZ 平面，厚度沿 X）
+    var discGeo = new THREE.CylinderGeometry(Rdisc, Rdisc, thickness, 32);
+    discGeo.rotateZ(Math.PI / 2);
+    g.add(new THREE.Mesh(discGeo, mat));
+
+    // 齿
+    var step = Math.PI * 2 / teeth;
+    var toothLen = r - Rdisc;
+    var toothW = r * 0.16;
+    for (var i = 0; i < teeth; i++) {
+      var a = i * step;
+      var t = new THREE.Mesh(new THREE.BoxGeometry(thickness, toothLen, toothW), mat);
+      t.position.set(0, Math.cos(a) * (Rdisc + toothLen * 0.5), Math.sin(a) * (Rdisc + toothLen * 0.5));
+      t.rotation.x = a;
+      g.add(t);
+    }
+
+    // 中心轴
+    var shaftGeo = new THREE.CylinderGeometry(r * 0.16, r * 0.16, thickness * 1.8, 16);
+    shaftGeo.rotateZ(Math.PI / 2);
+    g.add(new THREE.Mesh(shaftGeo, new THREE.MeshStandardMaterial({ color: 0x9aa0a6, metalness: 0.9, roughness: 0.3 })));
+
+    return g;
+  }
+
+  function wire(p0, p1, p2, mat) {
+    var curve = new THREE.CatmullRomCurve3([p0, p1, p2]);
+    var m = mesh(new THREE.TubeGeometry(curve, 24, 0.012, 6, false), mat);
+    m.castShadow = false;
+    return m;
+  }
+
+  /* ---------- 灯光 ---------- */
+  scene.add(new THREE.AmbientLight(0x1a2030, 0.45));
+  scene.add(new THREE.HemisphereLight(0x3a4a6a, 0x0a0a12, 0.30));
+
+  var key = new THREE.DirectionalLight(0xffc97a, 1.6);
+  key.position.set(5, 8, 4);
+  key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.bias = -0.0005;
+  key.shadow.normalBias = 0.02;
+  key.shadow.camera.near = 1;
+  key.shadow.camera.far = 30;
+  key.shadow.camera.left = -7;  key.shadow.camera.right = 7;
+  key.shadow.camera.top = 7;    key.shadow.camera.bottom = -7;
+  scene.add(key);
+
+  var rim = new THREE.DirectionalLight(0x4af0ff, 0.9);
+  rim.position.set(-4, 3, -5);
+  scene.add(rim);
+
+  var under = new THREE.PointLight(0x00d8ff, 0.9, 4);
+  under.position.set(0, -0.4, 0);
+  scene.add(under);
+
+  var coreLight = new THREE.PointLight(0xffb300, 0.7, 3);
+  coreLight.position.set(0, 0.12, 0.5);
+  scene.add(coreLight);
+
+  /* ---------- 地面 ---------- */
+  var floor = mesh(
+    new THREE.CircleGeometry(14, 64),
+    new THREE.MeshStandardMaterial({ color: 0x0e1424, metalness: 0.35, roughness: 0.7 }),
+    { pos: new THREE.Vector3(0, -1.6, 0), rot: { x: -Math.PI / 2 }, recv: true }
+  );
+  scene.add(floor);
+
+  var glowRing = mesh(
+    new THREE.TorusGeometry(1.25, 0.012, 8, 96),
+    MAT.glowCyan,
+    { pos: new THREE.Vector3(0, -1.58, 0), rot: { x: -Math.PI / 2 }, cast: false }
+  );
+  scene.add(glowRing);
+
+  var grid = new THREE.GridHelper(28, 56, 0x1a2540, 0x0c1220);
+  grid.position.y = -1.599;
+  scene.add(grid);
+
+  /* ---------- 蜜蜂 ---------- */
+  var bee = new THREE.Group();
+  bee.position.y = 0.2;
+  scene.add(bee);
+
+  /* 头部 */
+  var head = new THREE.Group();
+  head.position.set(0, 0.12, 0.72);
+  head.add(mesh(new THREE.SphereGeometry(0.26, 32, 24), MAT.dark));
+  for (var sx = -1; sx <= 1; sx += 2) {
+    head.add(mesh(new THREE.SphereGeometry(0.045, 16, 12), MAT.glowCyan, { pos: new THREE.Vector3(sx * 0.14, 0.16, 0.16) }));
+    head.add(mesh(new THREE.RingGeometry(0.052, 0.068, 24), MAT.glowCyan, { pos: new THREE.Vector3(sx * 0.14, 0.16, 0.168), cast: false }));
+  }
+  for (sx = -1; sx <= 1; sx += 2) {
+    var pts = [
+      new THREE.Vector3(sx * 0.09, 0.23, 0.04),
+      new THREE.Vector3(sx * 0.26, 0.42, 0.22),
+      new THREE.Vector3(sx * 0.36, 0.36, 0.42)
+    ];
+    head.add(mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 12, 0.012, 6, false), MAT.dark));
+    head.add(mesh(new THREE.SphereGeometry(0.028, 12, 8), MAT.glowAmber, { pos: pts[2] }));
+  }
+  bee.add(head);
+
+  /* 胸部 */
+  var thorax = new THREE.Group();
+  thorax.position.set(0, 0.1, 0.05);
+  var cap = mesh(new THREE.CapsuleGeometry(0.34, 0.30, 24, 12), MAT.light);
+  cap.rotation.x = Math.PI / 2;
+  thorax.add(cap);
+  thorax.add(mesh(new THREE.CircleGeometry(0.19, 32), MAT.glass, { pos: new THREE.Vector3(0, 0.12, 0.405), cast: false }));
+  var core = mesh(new THREE.SphereGeometry(0.09, 24, 16), MAT.glowAmber, { pos: new THREE.Vector3(0, 0.12, 0.28) });
+  thorax.add(core);
+  for (var i = 0; i < 3; i++) {
+    for (sx = -1; sx <= 1; sx += 2) {
+      thorax.add(mesh(new THREE.BoxGeometry(0.05, 0.03, 0.14), MAT.panel, { pos: new THREE.Vector3(sx * 0.33, 0.02, 0.02 + i * 0.1) }));
+    }
+  }
+  bee.add(thorax);
+
+  /* 腹部 */
+  var abdomen = new THREE.Group();
+  var segs = [
+    [0.30, 0.17, -0.22, MAT.light], [0.34, 0.17, -0.49, MAT.dark],
+    [0.32, 0.17, -0.76, MAT.light], [0.28, 0.17, -1.03, MAT.dark],
+    [0.24, 0.15, -1.27, MAT.light]
+  ];
+  for (i = 0; i < segs.length; i++) {
+    abdomen.add(mesh(new THREE.CylinderGeometry(segs[i][0], segs[i][0], segs[i][1], 24), segs[i][3], { pos: new THREE.Vector3(0, 0.05, segs[i][2]) }));
+  }
+  var rings = [[0.32, -0.35], [0.33, -0.62], [0.30, -0.89], [0.26, -1.15]];
+  for (i = 0; i < rings.length; i++) {
+    abdomen.add(mesh(new THREE.TorusGeometry(rings[i][0] + 0.004, 0.008, 8, 40), MAT.glowCyan, { pos: new THREE.Vector3(0, 0.05, rings[i][1]), cast: false }));
+  }
+  for (i = 0; i < 5; i++) {
+    for (sx = -1; sx <= 1; sx += 2) {
+      var z = -0.3 - i * 0.22;
+      var rr = 0.30 - Math.abs(z + 0.7) * 0.08;
+      abdomen.add(mesh(new THREE.SphereGeometry(0.02, 12, 8), MAT.glowAmber, { pos: new THREE.Vector3(sx * (rr + 0.006), 0.05, z) }));
+    }
+  }
+  abdomen.add(mesh(new THREE.ConeGeometry(0.12, 0.12, 16), MAT.dark, { pos: new THREE.Vector3(0, 0.05, -1.33), rot: { x: -Math.PI / 2 } }));
+  abdomen.add(mesh(new THREE.ConeGeometry(0.05, 0.12, 12), MAT.gold, { pos: new THREE.Vector3(0, 0.05, -1.49), rot: { x: -Math.PI / 2 } }));
+  bee.add(abdomen);
+
+  /* 齿轮 */
+  var gearA = createGear({ r: 0.18, teeth: 12, thickness: 0.05, color: 0xd4a017 });
+  gearA.position.set(0.42, 0.08, 0.05);
+  var gearB = createGear({ r: 0.11, teeth: 9, thickness: 0.045, color: 0xc9cdd4 });
+  gearB.position.set(0.58, 0.23, 0.05);
+  var gearC = createGear({ r: 0.10, teeth: 8, thickness: 0.04, color: 0x9aa0a6 });
+  gearC.position.set(0.40, -0.10, 0.05);
+  bee.add(gearA, gearB, gearC);
+
+  /* 活塞 */
+  var pistons = [];
+  var pistonPos = [[-0.36, -0.50, 0], [-0.34, -0.80, 1.4], [0.36, -0.50, 0.8], [0.34, -0.80, 2.2]];
+  for (i = 0; i < pistonPos.length; i++) {
+    var p = pistonPos[i];
+    var base = mesh(new THREE.BoxGeometry(0.09, 0.07, 0.07), MAT.panel, { pos: new THREE.Vector3(p[0], 0.05, p[1]) });
+    var rod  = mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.14, 8), MAT.light, { pos: new THREE.Vector3(p[0], 0.12, p[1]) });
+    var pcap = mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.025, 8), MAT.dark, { pos: new THREE.Vector3(p[0], 0.18, p[1]) });
+    var pg = new THREE.Group();
+    pg.add(base, rod, pcap);
+    pg.userData.phase = p[2];
+    pg.userData.rod = rod;
+    pg.userData.cap = pcap;
+    pistons.push(pg);
+    bee.add(pg);
+  }
+
+  /* 电线 */
+  bee.add(
+    wire(new THREE.Vector3(0, 0.48, 0.12),    new THREE.Vector3(0.12, 0.42, -0.45),  new THREE.Vector3(0, 0.38, -0.95),    MAT.glowCyan),
+    wire(new THREE.Vector3(-0.12, 0.46, 0.12), new THREE.Vector3(-0.30, 0.30, -0.55), new THREE.Vector3(-0.12, 0.28, -1.05), MAT.glowPink),
+    wire(new THREE.Vector3(0.34, 0.25, 0.05),  new THREE.Vector3(0.44, 0.26, 0.05),  new THREE.Vector3(0.55, 0.24, 0.05),  MAT.glowAmber)
+  );
+
+  /* 六条关节腿 */
+  var legs = [];
+  var legZ = [[0.25, 0], [-0.05, 1.3], [-0.50, 2.6]];
+  for (i = 0; i < legZ.length; i++) {
+    for (sx = 1; sx >= -1; sx -= 2) {
+      var g = new THREE.Group();
+      var hipX = sx * (legZ[i][0] > 0.1 ? 0.34 : 0.30);
+      var hipY = 0.10 - legZ[i][0] * 0.05;
+      var hip   = new THREE.Vector3(hipX, hipY, legZ[i][0]);
+      var knee  = new THREE.Vector3(sx * (0.52 + legZ[i][0] * 0.05), hipY - 0.12, legZ[i][0] + 0.02);
+      var ankle = new THREE.Vector3(sx * (0.68 + legZ[i][0] * 0.04), hipY - 0.26, legZ[i][0] + 0.04);
+      var foot  = new THREE.Vector3(sx * (0.76 + legZ[i][0] * 0.03), hipY - 0.34, legZ[i][0] + 0.05);
+      g.add(mesh(new THREE.SphereGeometry(0.05, 12, 8), MAT.dark, { pos: hip }));
+      addSeg(g, hip, knee, 0.03);
+      g.add(mesh(new THREE.SphereGeometry(0.045, 12, 8), MAT.gold, { pos: knee }));
+      addSeg(g, knee, ankle, 0.026);
+      g.add(mesh(new THREE.SphereGeometry(0.04, 12, 8), MAT.gold, { pos: ankle }));
+      addSeg(g, ankle, foot, 0.022);
+      g.add(mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.02, 10), MAT.dark, { pos: foot }));
+      g.userData.phase = legZ[i][1];
+      legs.push(g);
+      bee.add(g);
+    }
+  }
+
+  /* 翅膀 */
+  var wings = [];
+  function makeWing(root, length, side) {
+    var g = new THREE.Group();
+    g.position.copy(root);
+    var s = length / 0.55;
+    var shape = new THREE.Shape();
+    shape.moveTo(0, 0);
+    shape.bezierCurveTo(0.16, 0.10, 0.42, 0.13, 0.55, 0.02);
+    shape.bezierCurveTo(0.62, -0.04, 0.50, -0.14, 0.28, -0.14);
+    shape.bezierCurveTo(0.10, -0.14, 0.02, -0.07, 0, 0);
+    var pts = shape.getPoints().slice(0, -1);
+    var mg = new THREE.ShapeGeometry(shape, 16);
+    mg.scale(s, s, 1);
+    mg.rotateX(-Math.PI / 2);
+    var membrane = new THREE.Mesh(mg, MAT.wing);
+    membrane.castShadow = false;
+    var pts3 = [];
+    for (i = 0; i < pts.length; i++) pts3.push(new THREE.Vector3(pts[i].x * s, pts[i].y * s, 0));
+    var outlineCurve = new THREE.CatmullRomCurve3(pts3, true);
+    var fg = new THREE.TubeGeometry(outlineCurve, 40, 0.014, 8, true);
+    fg.rotateX(-Math.PI / 2);
+    var frame = mesh(fg, MAT.light);
+    var veinPts = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.3 * s, 0.03 * s, 0), new THREE.Vector3(0.55 * s, 0.01 * s, 0)];
+    var vg = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(veinPts), 20, 0.008, 6, false);
+    vg.rotateX(-Math.PI / 2);
+    var vein = mesh(vg, MAT.gold);
+    vein.castShadow = false;
+    g.add(mesh(new THREE.SphereGeometry(0.045, 12, 8), MAT.gold, { pos: new THREE.Vector3(0, 0, 0) }), membrane, frame, vein);
+    if (side === -1) g.scale.x = -1;
+    wings.push({ membrane: membrane });
+    return g;
+  }
+  var wf  = makeWing(new THREE.Vector3(0.05, 0.47, 0.12), 0.62, 1);
+  var wh  = makeWing(new THREE.Vector3(0.05, 0.43, -0.16), 0.46, 1);
+  var wf2 = makeWing(new THREE.Vector3(-0.05, 0.47, 0.12), 0.62, -1);
+  var wh2 = makeWing(new THREE.Vector3(-0.05, 0.43, -0.16), 0.46, -1);
+  bee.add(wf, wh, wf2, wh2);
+
+  /* 粒子 */
+  var pCount = 180;
+  var pGeo = new THREE.BufferGeometry();
+  var pPos = new Float32Array(pCount * 3);
+  for (i = 0; i < pCount; i++) {
+    pPos[i * 3]     = (Math.random() - 0.5) * 18;
+    pPos[i * 3 + 1] = Math.random() * 8 - 4;
+    pPos[i * 3 + 2] = (Math.random() - 0.5) * 18;
+  }
+  pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  var particles = new THREE.Points(
+    pGeo,
+    new THREE.PointsMaterial({ color: 0x00d8ff, size: 0.05, transparent: true, opacity: 0.6, sizeAttenuation: true })
+  );
+  scene.add(particles);
+
+  /* ---------- 交互 ---------- */
+  var mx = 0, my = 0;
+  window.addEventListener('pointermove', function (e) {
+    mx = (e.clientX / window.innerWidth  - 0.5) * 2;
+    my = (e.clientY / window.innerHeight - 0.5) * 2;
+  });
+  var boost = 0;
+  window.addEventListener('pointerdown', function () { boost = 1; });
+
+  /* ---------- 动画 ---------- */
+  var clock = new THREE.Clock();
+  var wingPhase = 0, gearPhase = 0, headY = 0, headX = 0;
+
+  function animate() {
+    requestAnimationFrame(animate);
+    var dt = Math.min(clock.getDelta(), 0.05);
+    var t = clock.elapsedTime;
+    boost = Math.max(0, boost - dt * 0.9);
+
+    bee.position.y = 0.2 + Math.sin(t * 2.2) * 0.04;
+    bee.rotation.z = Math.sin(t * 1.7) * 0.02;
+
+    bee.rotation.y += (mx * 0.18 - bee.rotation.y) * 0.04;
+    bee.rotation.x += (-my * 0.10 - bee.rotation.x) * 0.04;
+    headY += (mx * 0.35 - headY) * 0.06;
+    headX += (-my * 0.22 - headX) * 0.06;
+    head.rotation.y = headY;
+    head.rotation.x = headX;
+
+    var wingSpeed = 34 * (1 + boost * 1.6);
+    wingPhase += wingSpeed * dt;
+    var a1 = Math.sin(wingPhase) * (0.78 + boost * 0.22);
+    wf.rotation.x = a1;
+    wf2.rotation.x = a1;
+    var a2 = Math.sin(wingPhase - 0.55) * (0.60 + boost * 0.18);
+    wh.rotation.x = a2;
+    wh2.rotation.x = a2;
+    for (i = 0; i < wings.length; i++) wings[i].membrane.rotation.x = Math.sin(wingPhase * 2 + 1.3) * 0.10;
+
+    var gearSpeed = 2.2 * (1 + boost * 2);
+    gearPhase += gearSpeed * dt;
+    gearA.rotation.x = gearPhase;
+    gearB.rotation.x = -gearPhase * (0.18 / 0.11);
+    gearC.rotation.x = -gearPhase * (0.18 / 0.10);
+
+    for (i = 0; i < pistons.length; i++) {
+      var y = 0.07 + Math.sin(t * 10 + pistons[i].userData.phase) * 0.05;
+      pistons[i].userData.rod.position.y = y;
+      pistons[i].userData.cap.position.y = y + 0.06;
+    }
+
+    for (i = 0; i < legs.length; i++) {
+      legs[i].rotation.z = Math.sin(t * 2.4 + legs[i].userData.phase) * 0.07;
+      legs[i].rotation.x = Math.sin(t * 1.9 + legs[i].userData.phase * 1.7) * 0.04;
+    }
+
+    var pulse = Math.sin(t * 3) * 0.5 + 0.5;
+    MAT.glowCyan.emissiveIntensity = 2.4 + pulse * 0.8;
+    MAT.glowAmber.emissiveIntensity = 2.4 + Math.sin(t * 3.5 + 1) * 0.8;
+    core.material.emissiveIntensity = 2.2 + pulse * 1.0;
+
+    key.position.x = 5 + mx * 0.8;
+
+    var pos = particles.geometry.attributes.position;
+    for (i = 0; i < pos.count; i++) {
+      var yy = pos.getY(i) - 0.004;
+      pos.setY(i, yy);
+      if (yy < -4) pos.setY(i, 4);
+    }
+    pos.needsUpdate = true;
+
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  window.addEventListener('resize', function () {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>蜻蜓钟表</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    display: flex; align-items: center; justify-content: center;
+    background: #e8e2d4; overflow: hidden;
+  }
+  svg { max-width: 92%; max-height: 92vh; display: block; }
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f2eee2"/>
+      <stop offset="1" stop-color="#e2dcc8"/>
+    </linearGradient>
+    <radialGradient id="face" cx="0.5" cy="0.42" r="0.75">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset="1" stop-color="#f3ecd8"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="800" height="600" fill="url(#bg)"/>
+  <ellipse cx="400" cy="566" rx="185" ry="14" fill="#000" opacity="0.12"/>
+
+  <!-- 钟表外框 -->
+  <circle cx="400" cy="400" r="172" fill="#a08a60" stroke="#7a6a48" stroke-width="3"/>
+  <circle cx="400" cy="400" r="166" fill="none" stroke="#c9b99a" stroke-width="2"/>
+  <!-- 表盘 -->
+  <circle cx="400" cy="400" r="160" fill="url(#face)" stroke="#c9b99a" stroke-width="2"/>
+  <circle cx="400" cy="400" r="150" fill="none" stroke="#d9cbb0" stroke-width="1"/>
+
+  <!-- 刻度（JS 生成） -->
+  <g id="ticks"></g>
+
+  <!-- 指针（JS 旋转） -->
+  <g id="hourHand">
+    <line x1="400" y1="400" x2="400" y2="330" stroke="#2a2a2a" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <g id="minuteHand">
+    <line x1="400" y1="400" x2="400" y2="300" stroke="#2a2a2a" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <circle cx="400" cy="400" r="8" fill="#2a2a2a"/>
+
+  <!-- 蜻蜓六条腿（抓住不同刻度，互不穿插） -->
+  <g stroke="#7a5a3a" stroke-width="4" stroke-linecap="round" fill="none">
+    <line x1="390" y1="231" x2="322" y2="264.8"/>
+    <line x1="388" y1="241" x2="265.2" y2="322"/>
+    <line x1="390" y1="251" x2="244" y2="400"/>
+    <line x1="410" y1="231" x2="478" y2="264.8"/>
+    <line x1="412" y1="241" x2="534.8" y2="322"/>
+    <line x1="410" y1="251" x2="556" y2="400"/>
+  </g>
+
+  <!-- 蜻蜓翅膀（JS 小幅上下扇动，绕附着点旋转，不破坏肢体） -->
+  <g id="wingLU"><ellipse cx="350" cy="224" rx="42" ry="10" fill="#c8e0f0" opacity="0.35" stroke="#8ab8d8" stroke-width="1"/></g>
+  <g id="wingLL"><ellipse cx="350" cy="248" rx="42" ry="10" fill="#c8e0f0" opacity="0.35" stroke="#8ab8d8" stroke-width="1"/></g>
+  <g id="wingRU"><ellipse cx="450" cy="224" rx="42" ry="10" fill="#c8e0f0" opacity="0.35" stroke="#8ab8d8" stroke-width="1"/></g>
+  <g id="wingRL"><ellipse cx="450" cy="248" rx="42" ry="10" fill="#c8e0f0" opacity="0.35" stroke="#8ab8d8" stroke-width="1"/></g>
+
+  <!-- 蜻蜓身体（中心对准12点刻度） -->
+  <g id="dragonfly">
+    <circle cx="400" cy="214" r="11" fill="#4a8aa0" stroke="#3a6a80" stroke-width="2"/>
+    <circle cx="396" cy="212" r="2" fill="#2a2a2a"/>
+    <circle cx="404" cy="212" r="2" fill="#2a2a2a"/>
+    <ellipse cx="400" cy="238" rx="13" ry="15" fill="#5a9ab0" stroke="#3a6a80" stroke-width="2"/>
+    <ellipse cx="400" cy="266" rx="7" ry="20" fill="#4a8aa0" stroke="#3a6a80" stroke-width="2"/>
+    <line x1="400" y1="252" x2="400" y2="284" stroke="#3a6a80" stroke-width="1" opacity="0.5"/>
+  </g>
+
+  <script>
+(function(){
+  var CX=400, CY=400;
+  var NS='http://www.w3.org/2000/svg';
+  // 生成刻度
+  var tickGroup=document.getElementById('ticks');
+  for(var i=0;i<60;i++){
+    var angle=i*6*Math.PI/180;
+    var isHour=(i%5===0);
+    var r1=isHour?142:150, r2=156;
+    var x1=CX+r1*Math.sin(angle), y1=CY-r1*Math.cos(angle);
+    var x2=CX+r2*Math.sin(angle), y2=CY-r2*Math.cos(angle);
+    var line=document.createElementNS(NS,'line');
+    line.setAttribute('x1',x1.toFixed(1));
+    line.setAttribute('y1',y1.toFixed(1));
+    line.setAttribute('x2',x2.toFixed(1));
+    line.setAttribute('y2',y2.toFixed(1));
+    line.setAttribute('stroke',isHour?'#8a7a5a':'#c9b99a');
+    line.setAttribute('stroke-width',isHour?'4':'2');
+    line.setAttribute('stroke-linecap','round');
+    tickGroup.appendChild(line);
+  }
+  // 动画
+  var minuteHand=document.getElementById('minuteHand');
+  var hourHand=document.getElementById('hourHand');
+  var wingLU=document.getElementById('wingLU');
+  var wingLL=document.getElementById('wingLL');
+  var wingRU=document.getElementById('wingRU');
+  var wingRL=document.getElementById('wingRL');
+  function tick(now){
+    var t=now/1000;
+    var minDeg=t*4;              // 分针：90s 转一圈
+    var hourDeg=t*(4/12);        // 时针：12 倍慢
+    minuteHand.setAttribute('transform','rotate('+minDeg.toFixed(2)+','+CX+','+CY+')');
+    hourHand.setAttribute('transform','rotate('+hourDeg.toFixed(4)+','+CX+','+CY+')');
+    var flap=14*Math.sin(t*25);  // 翅膀小幅扇动
+    wingLU.setAttribute('transform','rotate('+flap.toFixed(2)+',393,231)');
+    wingLL.setAttribute('transform','rotate('+(-flap).toFixed(2)+',393,245)');
+    wingRU.setAttribute('transform','rotate('+flap.toFixed(2)+',407,231)');
+    wingRL.setAttribute('transform','rotate('+(-flap).toFixed(2)+',407,245)');
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</svg>
+</body>
+</html>

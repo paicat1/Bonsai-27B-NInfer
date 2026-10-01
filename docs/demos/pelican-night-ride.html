@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>鹈鹕夜骑 · 夜路 SVG 动画</title>
+<style>
+  html,body{margin:0;height:100%;background:#050710;overflow:hidden}
+  body{display:flex;align-items:center;justify-content:center}
+  .stage{
+    width:min(94vw,1040px);
+    aspect-ratio:900/560;
+    border-radius:16px;
+    overflow:hidden;
+    background:#0a0e20;
+    box-shadow:0 40px 90px rgba(0,0,0,.7),0 0 0 1px rgba(120,140,190,.14);
+  }
+  svg{width:100%;height:100%;display:block}
+  .star{animation:tw 3s ease-in-out infinite}
+  @keyframes tw{0%,100%{opacity:.25}50%{opacity:1}}
+  #shoot{animation:shoot 16s linear infinite}
+  @keyframes shoot{
+    0%,84%{opacity:0;transform:translate(0,0)}
+    86%{opacity:1}
+    90%{opacity:0;transform:translate(200px,110px)}
+    100%{opacity:0;transform:translate(200px,110px)}
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+<svg viewBox="0 0 900 560" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#090d22"/>
+      <stop offset=".55" stop-color="#152041"/>
+      <stop offset="1" stop-color="#2c3d63"/>
+    </linearGradient>
+    <radialGradient id="moonGlow">
+      <stop offset="0" stop-color="#fff3c4" stop-opacity=".55"/>
+      <stop offset="1" stop-color="#fff3c4" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="moonFace">
+      <stop offset="0" stop-color="#fff8d8"/>
+      <stop offset="1" stop-color="#f0dd99"/>
+    </radialGradient>
+    <linearGradient id="road" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#262e40"/>
+      <stop offset="1" stop-color="#171c2a"/>
+    </linearGradient>
+    <linearGradient id="starTail" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#fff" stop-opacity=".9"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 夜空 -->
+  <rect width="900" height="560" fill="url(#sky)"/>
+  <g id="stars"></g>
+  <g id="shoot">
+    <line x1="150" y1="40" x2="300" y2="130" stroke="url(#starTail)" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="300" cy="130" r="2.5" fill="#fff"/>
+  </g>
+
+  <!-- 月亮 -->
+  <circle cx="770" cy="105" r="95" fill="url(#moonGlow)"/>
+  <circle cx="770" cy="105" r="42" fill="url(#moonFace)"/>
+  <circle cx="752" cy="95" r="5" fill="#e4d39a"/>
+  <circle cx="784" cy="118" r="4" fill="#e4d39a"/>
+  <circle cx="776" cy="88" r="3" fill="#e4d39a"/>
+
+  <!-- 远处城市剪影 -->
+  <g fill="#0d1326">
+    <rect x="6" y="332" width="72" height="58"/>
+    <rect x="86" y="316" width="42" height="74"/>
+    <rect x="132" y="346" width="96" height="44"/>
+    <rect x="238" y="324" width="56" height="66"/>
+    <rect x="618" y="318" width="62" height="72"/>
+    <rect x="694" y="340" width="104" height="50"/>
+    <rect x="822" y="322" width="72" height="70"/>
+  </g>
+  <g fill="#ffd96b">
+    <rect x="18" y="342" width="5" height="6"/>
+    <rect x="44" y="356" width="5" height="6"/>
+    <rect x="98" y="326" width="5" height="6"/>
+    <rect x="112" y="348" width="5" height="6"/>
+    <rect x="252" y="334" width="5" height="6"/>
+    <rect x="272" y="360" width="5" height="6"/>
+    <rect x="632" y="328" width="5" height="6"/>
+    <rect x="654" y="352" width="5" height="6"/>
+    <rect x="716" y="350" width="5" height="6"/>
+    <rect x="838" y="332" width="5" height="6"/>
+    <rect x="862" y="358" width="5" height="6"/>
+  </g>
+
+  <!-- 草地 -->
+  <rect x="0" y="390" width="900" height="70" fill="#121729"/>
+  <g stroke="#26314e" stroke-width="2" fill="none" stroke-linecap="round">
+    <path d="M84,452 q5,-10 10,0 M96,452 q5,-10 10,0"/>
+    <path d="M206,456 q5,-10 10,0 M218,456 q5,-10 10,0"/>
+    <path d="M596,452 q5,-10 10,0 M608,452 q5,-10 10,0"/>
+    <path d="M748,456 q5,-10 10,0 M760,456 q5,-10 10,0"/>
+  </g>
+
+  <!-- 道路 -->
+  <rect x="0" y="460" width="900" height="100" fill="url(#road)"/>
+  <line x1="0" y1="462" x2="900" y2="462" stroke="#2e3749" stroke-width="3"/>
+  <line x1="0" y1="556" x2="900" y2="556" stroke="#2e3749" stroke-width="3"/>
+  <line id="roadDash" x1="0" y1="510" x2="900" y2="510" stroke="#93a7cc" stroke-width="4" stroke-dasharray="46 34" opacity=".6"/>
+
+  <!-- 投影 -->
+  <ellipse cx="420" cy="462" rx="150" ry="10" fill="#000" opacity=".38"/>
+
+  <!-- 后轮 -->
+  <g id="wheelR">
+    <circle cx="330" cy="415" r="45" fill="#0e121e" stroke="#2b3348" stroke-width="7"/>
+    <g stroke="#4b5574" stroke-width="2.5">
+      <line x1="330" y1="370" x2="330" y2="460"/>
+      <line x1="285" y1="415" x2="375" y2="415"/>
+      <line x1="298" y1="383" x2="362" y2="447"/>
+      <line x1="298" y1="447" x2="362" y2="383"/>
+    </g>
+    <circle cx="330" cy="370" r="3" fill="#f5b84b"/>
+    <circle cx="330" cy="415" r="6" fill="#8a97b8"/>
+  </g>
+
+  <!-- 前轮 -->
+  <g id="wheelF">
+    <circle cx="510" cy="415" r="45" fill="#0e121e" stroke="#2b3348" stroke-width="7"/>
+    <g stroke="#4b5574" stroke-width="2.5">
+      <line x1="510" y1="370" x2="510" y2="460"/>
+      <line x1="465" y1="415" x2="555" y2="415"/>
+      <line x1="478" y1="383" x2="542" y2="447"/>
+      <line x1="478" y1="447" x2="542" y2="383"/>
+    </g>
+    <circle cx="510" cy="370" r="3" fill="#f5b84b"/>
+    <circle cx="510" cy="415" r="6" fill="#8a97b8"/>
+  </g>
+
+  <!-- 车架 -->
+  <g stroke="#e2593d" stroke-linecap="round">
+    <line x1="352" y1="332" x2="488" y2="352" stroke-width="9"/>
+    <line x1="352" y1="332" x2="420" y2="415" stroke-width="9"/>
+    <line x1="420" y1="415" x2="330" y2="415" stroke-width="7"/>
+    <line x1="420" y1="408" x2="336" y2="404" stroke-width="7"/>
+    <line x1="488" y1="352" x2="510" y2="415" stroke-width="9"/>
+    <line x1="488" y1="352" x2="542" y2="322" stroke-width="6"/>
+    <line x1="352" y1="328" x2="352" y2="398" stroke-width="6"/>
+  </g>
+  <rect x="336" y="324" width="34" height="9" rx="4" fill="#2b3140"/>
+  <circle cx="544" cy="320" r="6" fill="#2b3140"/>
+
+  <!-- 曲柄组 -->
+  <g id="chainring">
+    <circle cx="420" cy="415" r="12" fill="none" stroke="#454d66" stroke-width="5"/>
+    <g stroke="#454d66" stroke-width="3" stroke-linecap="round">
+      <line x1="420" y1="415" x2="432" y2="415"/>
+      <line x1="420" y1="415" x2="414" y2="425.4"/>
+      <line x1="420" y1="415" x2="414" y2="404.6"/>
+    </g>
+  </g>
+  <line id="crankArm" x1="420" y1="415" x2="446" y2="415" stroke="#454d66" stroke-width="8" stroke-linecap="round"/>
+  <g id="pedal1"><rect x="-8" y="-2.5" width="16" height="5" rx="1" fill="#454d66"/></g>
+  <g id="pedal2"><rect x="-8" y="-2.5" width="16" height="5" rx="1" fill="#454d66"/></g>
+
+  <!-- 双腿（上下腿 + 轮廓） -->
+  <g stroke-linecap="round">
+    <line id="leg1Uo" x1="405" y1="322" x2="463" y2="344" stroke="#c8bca0" stroke-width="13"/>
+    <line id="leg1U"  x1="405" y1="322" x2="463" y2="344" stroke="#f7f2e7" stroke-width="9"/>
+    <line id="leg1Lo" x1="463" y1="344" x2="420" y2="389" stroke="#c8bca0" stroke-width="13"/>
+    <line id="leg1L"  x1="463" y1="344" x2="420" y2="389" stroke="#f7f2e7" stroke-width="9"/>
+    <line id="leg2Uo" x1="405" y1="322" x2="440" y2="420" stroke="#c8bca0" stroke-width="13"/>
+    <line id="leg2U"  x1="405" y1="322" x2="440" y2="420" stroke="#f7f2e7" stroke-width="9"/>
+    <line id="leg2Lo" x1="440" y1="420" x2="394" y2="415" stroke="#c8bca0" stroke-width="13"/>
+    <line id="leg2L"  x1="440" y1="420" x2="394" y2="415" stroke="#f7f2e7" stroke-width="9"/>
+  </g>
+
+  <!-- 脚掌 -->
+  <g id="foot1"><ellipse rx="9" ry="5" fill="#f7f2e7" stroke="#c8bca0" stroke-width="2"/></g>
+  <g id="foot2"><ellipse rx="9" ry="5" fill="#f7f2e7" stroke="#c8bca0" stroke-width="2"/></g>
+
+  <!-- 手臂（握把） -->
+  <g stroke-linecap="round">
+    <line x1="448" y1="292" x2="544" y2="320" stroke="#c8bca0" stroke-width="13"/>
+    <line x1="448" y1="292" x2="544" y2="320" stroke="#f7f2e7" stroke-width="9"/>
+    <line x1="452" y1="300" x2="536" y2="326" stroke="#c8bca0" stroke-width="13"/>
+    <line x1="452" y1="300" x2="536" y2="326" stroke="#f7f2e7" stroke-width="9"/>
+  </g>
+
+  <!-- 鹈鹕 -->
+  <g id="bird">
+    <path d="M348,292 L298,308 L350,324 Z" fill="#f7f2e7" stroke="#c8bca0" stroke-width="2.5" stroke-linejoin="round"/>
+    <ellipse cx="400" cy="300" rx="60" ry="36" fill="#f7f2e7" stroke="#c8bca0" stroke-width="2.5"/>
+    <path d="M362,326 Q400,338 438,326" fill="none" stroke="#e0d4bc" stroke-width="3" stroke-linecap="round"/>
+    <g id="wing">
+      <path d="M352,272 Q398,246 446,270 Q400,288 352,272 Z" fill="#e8dcc0" stroke="#d3c29a" stroke-width="2.5"/>
+      <path d="M362,278 Q398,264 434,274" fill="none" stroke="#d3c29a" stroke-width="2" stroke-linecap="round"/>
+    </g>
+    <circle cx="462" cy="266" r="24" fill="#f7f2e7" stroke="#c8bca0" stroke-width="2.5"/>
+    <path d="M450,246 Q462,230 476,242" fill="none" stroke="#f7f2e7" stroke-width="5" stroke-linecap="round"/>
+    <circle cx="466" cy="262" r="4.5" fill="#1a1a26"/>
+    <circle cx="468" cy="260" r="1.6" fill="#fff"/>
+    <path d="M482,256 Q530,244 564,256 L564,258 Q558,290 508,286 L484,278 Z"
+          fill="#f3e9d2" stroke="#c8bca0" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M562,260 Q556,288 508,286 Q544,276 558,266 Z" fill="#ffd9d9" opacity=".75"/>
+  </g>
+
+  <!-- 标题 -->
+  <text x="866" y="36" text-anchor="end" font-family="Microsoft YaHei, 'Segoe UI', sans-serif"
+        font-size="18" fill="#6b7fa8" opacity=".9">夜路 · 鹈鹕骑行</text>
+</svg>
+</div>
+<script>
+(function(){
+  var NS='http://www.w3.org/2000/svg';
+
+  /* 生成闪烁星星 */
+  var stars=document.getElementById('stars');
+  for(var i=0;i<70;i++){
+    var c=document.createElementNS(NS,'circle');
+    c.setAttribute('cx',(Math.random()*900).toFixed(1));
+    c.setAttribute('cy',(Math.random()*350).toFixed(1));
+    c.setAttribute('r',(0.7+Math.random()*1.6).toFixed(1));
+    c.setAttribute('fill','#e8ecff');
+    c.setAttribute('class','star');
+    c.style.animationDelay=(Math.random()*4).toFixed(2)+'s';
+    c.style.animationDuration=(2+Math.random()*3).toFixed(2)+'s';
+    stars.appendChild(c);
+  }
+
+  var E=function(id){return document.getElementById(id);};
+  var BB={x:420,y:415};        /* 中轴（曲柄轴心） */
+  var CRANK=26;                /* 曲柄半径 */
+  var HIP={x:405,y:322};       /* 髋部（鸡腿根部） */
+  var L1=62,L2=62;             /* 上腿 / 下腿长度（IK） */
+  var PERIOD=0.85;             /* 蹬踏周期（秒） */
+  var V=(Math.PI*2/PERIOD)*CRANK; /* 地面速度 px/s */
+
+  var pedal=function(theta,phase){
+    return {x:BB.x+CRANK*Math.cos(theta+phase),
+            y:BB.y+CRANK*Math.sin(theta+phase)};
+  };
+  var solveKnee=function(h,p){
+    var dx=p.x-h.x,dy=p.y-h.y,d=Math.hypot(dx,dy);
+    var ux=dx/d,uy=dy/d;
+    var a=(d*d+L1*L1-L2*L2)/(2*d);
+    var hh=Math.sqrt(Math.max(0,L1*L1-a*a));
+    /* 膝盖朝前 */
+    return {x:h.x+a*ux+hh*uy, y:h.y+a*uy-hh*ux};
+  };
+  var setLine=function(el,x1,y1,x2,y2){
+    el.setAttribute('x1',x1.toFixed(2));el.setAttribute('y1',y1.toFixed(2));
+    el.setAttribute('x2',x2.toFixed(2));el.setAttribute('y2',y2.toFixed(2));
+  };
+  var setT=function(el,s){el.setAttribute('transform',s);};
+
+  var wheelR=E('wheelR'),wheelF=E('wheelF'),chainring=E('chainring'),
+      crankArm=E('crankArm'),pedal1=E('pedal1'),pedal2=E('pedal2'),
+      foot1=E('foot1'),foot2=E('foot2'),
+      leg1U=E('leg1U'),leg1Uo=E('leg1Uo'),leg1L=E('leg1L'),leg1Lo=E('leg1Lo'),
+      leg2U=E('leg2U'),leg2Uo=E('leg2Uo'),leg2L=E('leg2L'),leg2Lo=E('leg2Lo'),
+      bird=E('bird'),wing=E('wing'),roadDash=E('roadDash');
+
+  function tick(now){
+    var t=now/1000;
+    var theta=t*Math.PI*2/PERIOD;      /* 曲柄角 */
+    var deg=theta*180/Math.PI;
+    var bob=Math.sin(theta*2)*3;       /* 身体起伏 */
+
+    /* 车轮转动（按传动比：轮角 = 曲柄角 * 曲柄半径/轮半径） */
+    var wheelDeg=(deg*CRANK/45).toFixed(2);
+    setT(wheelR,'rotate('+wheelDeg+',330,415)');
+    setT(wheelF,'rotate('+wheelDeg+',510,415)');
+    setT(chainring,'rotate('+deg.toFixed(2)+',420,415)');
+
+    /* 曲柄 + 脚踏 + 脚掌 */
+    var p1=pedal(theta,0), p2=pedal(theta,Math.PI);
+    setLine(crankArm,BB.x,BB.y,p1.x,p1.y);
+    setT(pedal1,'translate('+p1.x.toFixed(2)+','+p1.y.toFixed(2)+') rotate('+(deg+90).toFixed(2)+')');
+    setT(pedal2,'translate('+p2.x.toFixed(2)+','+p2.y.toFixed(2)+') rotate('+(deg+270).toFixed(2)+')');
+    setT(foot1,'translate('+p1.x.toFixed(2)+','+p1.y.toFixed(2)+') rotate('+(deg+90).toFixed(2)+')');
+    setT(foot2,'translate('+p2.x.toFixed(2)+','+p2.y.toFixed(2)+') rotate('+(deg+270).toFixed(2)+')');
+
+    /* 双腿 IK：髋部 -> 膝 -> 脚踩踏板 */
+    var H={x:HIP.x,y:HIP.y+bob};
+    var k1=solveKnee(H,p1), k2=solveKnee(H,p2);
+    setLine(leg1Uo,H.x,H.y,k1.x,k1.y); setLine(leg1U,H.x,H.y,k1.x,k1.y);
+    setLine(leg1Lo,k1.x,k1.y,p1.x,p1.y); setLine(leg1L,k1.x,k1.y,p1.x,p1.y);
+    setLine(leg2Uo,H.x,H.y,k2.x,k2.y); setLine(leg2U,H.x,H.y,k2.x,k2.y);
+    setLine(leg2Lo,k2.x,k2.y,p2.x,p2.y); setLine(leg2L,k2.x,k2.y,p2.x,p2.y);
+
+    /* 身体起伏 + 翅膀扇动 */
+    setT(bird,'translate(0,'+bob.toFixed(2)+')');
+    setT(wing,'rotate('+(Math.sin(theta*2+0.6)*8).toFixed(2)+',372,270)');
+
+    /* 路面虚线向后滚动 */
+    roadDash.setAttribute('stroke-dashoffset',(t*V%80).toFixed(2));
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

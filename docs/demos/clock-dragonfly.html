@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>老式机械钟表上的蜻蜓</title>
+<style>
+  html, body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #2a2318;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at 50% 42%, #4a3c2a 0%, #2a2318 62%, #17130d 100%);
+    z-index: -1;
+  }
+  svg {
+    width: min(92vw, 820px);
+    height: auto;
+    filter: drop-shadow(0 22px 34px rgba(0, 0, 0, 0.6));
+  }
+  /* 指针：围绕表盘中心 (250,250) 旋转，角度由 JS 按真实时间驱动 */
+  .hand {
+    transform-box: view-box;
+    transform-origin: 250px 250px;
+  }
+
+  /* 翅膀：绕翅根小幅上下扇动，不动整体肢体结构 */
+  .wing {
+    transform-box: view-box;
+    animation: flap 0.16s ease-in-out infinite;
+  }
+  .wing-lf { transform-origin: 241px 39px; }
+  .wing-rf { transform-origin: 259px 39px; }
+  .wing-lh { transform-origin: 243px 51px; }
+  .wing-rh { transform-origin: 255px 51px; }
+  @keyframes flap {
+    0%, 100% { transform: rotate(-9deg); }
+    50%      { transform: rotate(9deg); }
+  }
+
+  .num {
+    font-family: "Times New Roman", Georgia, serif;
+    font-size: 26px;
+    font-weight: bold;
+    fill: #5c4632;
+    text-anchor: middle;
+    dominant-baseline: central;
+  }
+  .vein { fill: none; stroke: rgba(72, 54, 38, 0.55); stroke-width: 1; stroke-linecap: round; }
+  .leg  { fill: none; stroke: #5b3a24; stroke-width: 2.6; stroke-linecap: round; }
+</style>
+</head>
+<body>
+<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" role="img"
+     aria-label="一只蜻蜓停在老式机械钟表表盘上，六条腿抓住刻度，指针跟随真实时间转动，翅膀扇动">
+  <defs>
+    <radialGradient id="dialGrad" cx="50%" cy="44%" r="62%">
+      <stop offset="0" stop-color="#f9f3e0"/>
+      <stop offset="0.7" stop-color="#f1e6c9"/>
+      <stop offset="1" stop-color="#e3d3ae"/>
+    </radialGradient>
+    <linearGradient id="brassGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e0b95a"/>
+      <stop offset="0.45" stop-color="#b98a2e"/>
+      <stop offset="1" stop-color="#7d5716"/>
+    </linearGradient>
+    <linearGradient id="handGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d4a94a"/>
+      <stop offset="1" stop-color="#8a6218"/>
+    </linearGradient>
+    <linearGradient id="wingGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f4e6c8"/>
+      <stop offset="1" stop-color="#e2d2b0"/>
+    </linearGradient>
+    <radialGradient id="abGrad" cx="50%" cy="30%" r="70%">
+      <stop offset="0" stop-color="#8a6338"/>
+      <stop offset="1" stop-color="#4a3320"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 表盘阴影 -->
+  <ellipse cx="250" cy="256" rx="214" ry="214" fill="#000" opacity="0.28"/>
+
+  <!-- 老式钟表表壳（黄铜） -->
+  <circle cx="250" cy="250" r="212" fill="url(#brassGrad)" stroke="#5a3d10" stroke-width="2"/>
+  <circle cx="250" cy="250" r="206" fill="none" stroke="#e8c878" stroke-width="1.5" opacity="0.6"/>
+  <circle cx="250" cy="250" r="201" fill="none" stroke="#3a2a12" stroke-width="2.5"/>
+
+  <!-- 表盘 -->
+  <circle cx="250" cy="250" r="199" fill="url(#dialGrad)"/>
+  <circle cx="250" cy="250" r="199" fill="none" stroke="#c9b27a" stroke-width="1" opacity="0.7"/>
+  <circle cx="250" cy="250" r="176" fill="none" stroke="#b09460" stroke-width="1" opacity="0.55"/>
+  <circle cx="250" cy="250" r="172" fill="none" stroke="#b09460" stroke-width="0.7" opacity="0.4"/>
+
+  <!-- 刻度：60 个小刻度 + 12 个大刻度（JS 生成） -->
+  <g id="ticks"></g>
+
+  <!-- 罗马数字 -->
+  <text class="num" x="250" y="95">XII</text>
+  <text class="num" x="327.5" y="116.2">I</text>
+  <text class="num" x="383.8" y="172.5">II</text>
+  <text class="num" x="405" y="250">III</text>
+  <text class="num" x="383.8" y="327.5">IV</text>
+  <text class="num" x="327.5" y="383.8">V</text>
+  <text class="num" x="250" y="405">VI</text>
+  <text class="num" x="172.5" y="383.8">VII</text>
+  <text class="num" x="116.2" y="327.5">VIII</text>
+  <text class="num" x="95" y="250">IX</text>
+  <text class="num" x="116.2" y="172.5">X</text>
+  <text class="num" x="172.5" y="116.2">XI</text>
+
+  <!-- 指针（角度由 JS 按真实时间驱动） -->
+  <g class="hand" id="hand-hour">
+    <path d="M 250 252 L 244 252 L 244 200 L 239 200 L 239 155 L 250 138 L 261 155 L 261 200 L 256 200 L 256 252 Z"
+          fill="url(#handGrad)" stroke="#5a3d10" stroke-width="0.8"/>
+  </g>
+  <g class="hand" id="hand-minute">
+    <path d="M 250 252 L 246 252 L 246 185 L 242 185 L 242 125 L 250 72 L 258 125 L 258 185 L 254 185 L 254 252 Z"
+          fill="url(#handGrad)" stroke="#5a3d10" stroke-width="0.8"/>
+  </g>
+  <g class="hand" id="hand-second">
+    <line x1="250" y1="65" x2="250" y2="272" stroke="#7a5c3a" stroke-width="1.8"/>
+    <circle cx="250" cy="272" r="4" fill="#7a5c3a"/>
+  </g>
+  <circle cx="250" cy="250" r="9" fill="url(#brassGrad)" stroke="#5a3d10" stroke-width="1"/>
+  <circle cx="250" cy="250" r="3" fill="#3a2a12"/>
+
+  <!-- 蜻蜓投影 -->
+  <ellipse cx="250" cy="52" rx="34" ry="7" fill="#000" opacity="0.16"/>
+
+  <!-- 蜻蜓：身体中心对准 12 点刻度 (250,50) -->
+  <g id="dragonfly">
+    <!-- 六条腿：分别抓住 9、10、11 与 1、2、3 点刻度，呈扇形分布互不相交 -->
+    <g>
+      <path class="leg" d="M 243 41 C 218 48 185 58 150 77"/>
+      <path class="leg" d="M 243 48 C 195 68 135 105 77 150"/>
+      <path class="leg" d="M 243 55 C 175 92 115 160 50 250"/>
+      <path class="leg" d="M 257 41 C 282 48 315 58 350 77"/>
+      <path class="leg" d="M 257 48 C 305 68 365 105 423 150"/>
+      <path class="leg" d="M 257 55 C 325 92 385 160 450 250"/>
+      <!-- 脚爪 -->
+      <g fill="#5b3a24">
+        <circle cx="150" cy="77" r="3"/>
+        <circle cx="77" cy="150" r="3"/>
+        <circle cx="50" cy="250" r="3"/>
+        <circle cx="350" cy="77" r="3"/>
+        <circle cx="423" cy="150" r="3"/>
+        <circle cx="450" cy="250" r="3"/>
+      </g>
+    </g>
+
+    <!-- 翅膀（先画，位于身体下方） -->
+    <g class="wing wing-lf">
+      <path d="M 241 39 C 205 25 158 18 118 29 C 152 41 198 45 241 41 Z"
+            fill="url(#wingGrad)" fill-opacity="0.55" stroke="#a8895f" stroke-width="0.8"/>
+      <path class="vein" d="M 241 39 C 198 32 158 27 122 31"/>
+    </g>
+    <g class="wing wing-rf">
+      <path d="M 259 39 C 295 25 342 18 382 29 C 348 41 302 45 259 41 Z"
+            fill="url(#wingGrad)" fill-opacity="0.55" stroke="#a8895f" stroke-width="0.8"/>
+      <path class="vein" d="M 259 39 C 302 32 342 27 378 31"/>
+    </g>
+    <g class="wing wing-lh">
+      <path d="M 243 51 C 212 43 180 41 152 49 C 176 56 210 57 243 54 Z"
+            fill="url(#wingGrad)" fill-opacity="0.55" stroke="#a8895f" stroke-width="0.8"/>
+      <path class="vein" d="M 243 51 C 214 46 186 44 158 50"/>
+    </g>
+    <g class="wing wing-rh">
+      <path d="M 255 51 C 286 43 318 41 348 49 C 324 56 290 57 255 54 Z"
+            fill="url(#wingGrad)" fill-opacity="0.55" stroke="#a8895f" stroke-width="0.8"/>
+      <path class="vein" d="M 255 51 C 284 46 312 44 342 50"/>
+    </g>
+
+    <!-- 身体 -->
+    <path d="M 246 59 Q 250 59 254 59 L 253 76 Q 250 84 247 76 Z" fill="url(#abGrad)"/>
+    <g fill="#8a6338" stroke="#4a3320" stroke-width="0.6">
+      <ellipse cx="250" cy="46" rx="7.5" ry="13"/>
+    </g>
+    <circle cx="250" cy="24" r="9" fill="#5b3a24"/>
+    <circle cx="250" cy="24" r="9" fill="none" stroke="#3a2518" stroke-width="0.8"/>
+    <circle cx="244" cy="22.5" r="3" fill="#1d140b"/>
+    <circle cx="256" cy="22.5" r="3" fill="#1d140b"/>
+    <circle cx="244" cy="22.5" r="1" fill="#e8d8b0" opacity="0.8"/>
+    <circle cx="256" cy="22.5" r="1" fill="#e8d8b0" opacity="0.8"/>
+  </g>
+</svg>
+
+<script>
+  // 生成 60 个小刻度与 12 个大刻度
+  (function () {
+    var g = document.getElementById("ticks");
+    var svgNS = "http://www.w3.org/2000/svg";
+    for (var i = 0; i < 60; i++) {
+      var major = i % 5 === 0;
+      var a = (i * 6) * Math.PI / 180;
+      var r1 = major ? 188 : 192;
+      var r2 = major ? 200 : 197;
+      var x1 = 250 + Math.sin(a) * r1;
+      var y1 = 250 - Math.cos(a) * r1;
+      var x2 = 250 + Math.sin(a) * r2;
+      var y2 = 250 - Math.cos(a) * r2;
+      var line = document.createElementNS(svgNS, "line");
+      line.setAttribute("x1", x1.toFixed(1));
+      line.setAttribute("y1", y1.toFixed(1));
+      line.setAttribute("x2", x2.toFixed(1));
+      line.setAttribute("y2", y2.toFixed(1));
+      line.setAttribute("stroke", major ? "#6b5433" : "#9c8358");
+      line.setAttribute("stroke-width", major ? 3 : 1.5);
+      line.setAttribute("stroke-linecap", "round");
+      g.appendChild(line);
+    }
+  })();
+
+  // 指针跟随真实时间（requestAnimationFrame 每帧同步）
+  (function () {
+    var hrEl  = document.getElementById("hand-hour");
+    var minEl = document.getElementById("hand-minute");
+    var secEl = document.getElementById("hand-second");
+
+    function update() {
+      var now = new Date();
+      var ms  = now.getMilliseconds() / 1000;
+      var s   = now.getSeconds() + ms;
+      var m   = now.getMinutes() + s / 60;
+      var h   = (now.getHours() % 12) + m / 60;
+
+      secEl.style.transform = "rotate(" + (s * 6) + "deg)";
+      minEl.style.transform = "rotate(" + (m * 6) + "deg)";
+      hrEl.style.transform  = "rotate(" + (h * 30) + "deg)";
+
+      requestAnimationFrame(update);
+    }
+    update();
+  })();
+</script>
+</body>
+</html>

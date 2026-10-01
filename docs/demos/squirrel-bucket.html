@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>松鼠手摇提桶</title>
+<style>
+  html,body{margin:0;height:100%;background:#eef3f7;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  svg{width:min(92vw,860px);height:auto;display:block}
+</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d7e8f5"/>
+      <stop offset="1" stop-color="#cfe2ee"/>
+    </linearGradient>
+    <radialGradient id="sunGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#fff6c8" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#fff6c8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="800" height="520" fill="url(#sky)"/>
+  <circle cx="72" cy="72" r="70" fill="url(#sunGlow)"/>
+  <circle cx="72" cy="72" r="34" fill="#ffd96b"/>
+  <ellipse cx="180" cy="110" rx="55" ry="14" fill="#ffffff" opacity="0.55"/>
+  <ellipse cx="215" cy="104" rx="38" ry="11" fill="#ffffff" opacity="0.55"/>
+  <ellipse cx="640" cy="150" rx="70" ry="16" fill="#ffffff" opacity="0.5"/>
+  <rect y="500" width="800" height="100" fill="#b9a98c"/>
+  <rect y="500" width="800" height="6" fill="#a7957a"/>
+
+  <!-- 机座 -->
+  <ellipse cx="310" cy="528" rx="235" ry="11" fill="#000" opacity="0.14"/>
+  <rect x="95" y="428" width="430" height="100" fill="#c98a4b" stroke="#9c632f" stroke-width="3"/>
+  <rect x="95" y="428" width="430" height="16" fill="#dd9e5e"/>
+  <rect x="110" y="452" width="400" height="64" fill="#b97a3c" stroke="#9c632f" stroke-width="2"/>
+  <line x1="110" y1="484" x2="510" y2="484" stroke="#9c632f" stroke-width="2" opacity="0.5"/>
+
+  <!-- 传动轴柱 -->
+  <rect x="226" y="348" width="10" height="82" fill="#7d6d5a"/>
+  <rect x="424" y="348" width="10" height="82" fill="#7d6d5a"/>
+
+  <!-- 手摇曲柄（大齿轮，与摇柄同轴） -->
+  <g id="crankGroup">
+    <path id="gear1Teeth" fill="#d8c39e" stroke="#a98f63" stroke-width="1.5"/>
+    <circle cx="230" cy="350" r="58" fill="#e0cfa5" stroke="#a98f63" stroke-width="3"/>
+    <g stroke="#a98f63" stroke-width="4">
+      <line x1="230" y1="350" x2="278" y2="350"/>
+      <line x1="230" y1="350" x2="254" y2="399"/>
+      <line x1="230" y1="350" x2="206" y2="399"/>
+      <line x1="230" y1="350" x2="182" y2="350"/>
+      <line x1="230" y1="350" x2="206" y2="301"/>
+      <line x1="230" y1="350" x2="254" y2="301"/>
+    </g>
+    <circle cx="230" cy="350" r="10" fill="#7d6d5a"/>
+    <line x1="230" y1="350" x2="268" y2="350" stroke="#7d6d5a" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="268" cy="350" r="8" fill="#5f5140"/>
+  </g>
+
+  <!-- 从动齿轮（小齿轮，与鼓同轴） -->
+  <g id="smallGearGroup">
+    <path id="gear2Teeth" fill="#d8c39e" stroke="#a98f63" stroke-width="1.5"/>
+    <circle cx="430" cy="350" r="130" fill="#e0cfa5" stroke="#a98f63" stroke-width="3"/>
+    <g stroke="#a98f63" stroke-width="4">
+      <line x1="430" y1="350" x2="552" y2="350"/>
+      <line x1="430" y1="350" x2="516" y2="436"/>
+      <line x1="430" y1="350" x2="430" y2="472"/>
+      <line x1="430" y1="350" x2="344" y2="436"/>
+      <line x1="430" y1="350" x2="344" y2="264"/>
+      <line x1="430" y1="350" x2="430" y2="228"/>
+      <line x1="430" y1="350" x2="516" y2="264"/>
+      <line x1="430" y1="350" x2="552" y2="350"/>
+    </g>
+    <circle cx="430" cy="350" r="12" fill="#7d6d5a"/>
+  </g>
+
+  <!-- 卷鼓（与从动齿轮同轴） -->
+  <circle cx="430" cy="350" r="28" fill="#5f5140" stroke="#4a3d2e" stroke-width="3"/>
+  <g id="drumGroup">
+    <g stroke="#8a7a63" stroke-width="3" stroke-linecap="round">
+      <line x1="430" y1="350" x2="452" y2="350"/>
+      <line x1="430" y1="350" x2="430" y2="372"/>
+      <line x1="430" y1="350" x2="408" y2="350"/>
+      <line x1="430" y1="350" x2="430" y2="328"/>
+    </g>
+    <circle cx="430" cy="350" r="5" fill="#8a7a63"/>
+  </g>
+
+  <!-- 绳索（端点固定于木桶把手） -->
+  <line id="rope" x1="430" y1="322" x2="430" y2="432" stroke="#7a6a55" stroke-width="3"/>
+
+  <!-- 木桶（缓慢上下升降） -->
+  <g id="bucketGroup">
+    <path d="M408,440 Q430,424 452,440" fill="none" stroke="#7a4f26" stroke-width="4" stroke-linecap="round"/>
+    <path d="M404,446 L456,446 L448,490 L412,490 Z" fill="#a96f38" stroke="#7a4f26" stroke-width="3"/>
+    <line x1="406" y1="462" x2="454" y2="462" stroke="#7a4f26" stroke-width="2" opacity="0.5"/>
+    <line x1="407" y1="480" x2="453" y2="480" stroke="#7a4f26" stroke-width="2" opacity="0.5"/>
+    <ellipse cx="430" cy="446" rx="26" ry="4" fill="#b97f48" stroke="#7a4f26" stroke-width="1.5"/>
+  </g>
+
+  <!-- 松鼠 -->
+  <g id="squirrel">
+    <path d="M306,408 Q258,404 252,346 Q248,304 284,298 Q318,304 314,356 Q318,400 306,408 Z"
+          fill="#b56a2e" stroke="#8f4f1e" stroke-width="2.5"/>
+    <ellipse cx="322" cy="378" rx="34" ry="50" fill="#c97b3a" stroke="#8f4f1e" stroke-width="2.5"/>
+    <ellipse cx="322" cy="394" rx="24" ry="30" fill="#e8c8a8"/>
+    <circle cx="327" cy="338" r="22" fill="#c97b3a" stroke="#8f4f1e" stroke-width="2.5"/>
+    <path d="M316,318 L321,302 L331,316 Z" fill="#c97b3a" stroke="#8f4f1e" stroke-width="2"/>
+    <path d="M338,318 L343,304 L350,316 Z" fill="#c97b3a" stroke="#8f4f1e" stroke-width="2"/>
+    <circle cx="334" cy="336" r="3.4" fill="#222"/>
+    <circle cx="335.4" cy="334.6" r="1.2" fill="#fff"/>
+    <circle cx="340" cy="343" r="2.2" fill="#8f4f1e"/>
+    <ellipse cx="306" cy="424" rx="9" ry="6" fill="#c97b3a" stroke="#8f4f1e" stroke-width="2"/>
+    <ellipse cx="338" cy="424" rx="9" ry="6" fill="#c97b3a" stroke="#8f4f1e" stroke-width="2"/>
+  </g>
+
+  <!-- 手臂（跟随爪） -->
+  <line id="arm1" x1="290" y1="350" x2="268" y2="350" stroke="#c97b3a" stroke-width="13" stroke-linecap="round"/>
+  <line id="arm2" x1="296" y1="348" x2="273" y2="354" stroke="#c97b3a" stroke-width="13" stroke-linecap="round"/>
+  <ellipse id="paw1" cx="268" cy="350" rx="8" ry="5.5" fill="#e8b87a" stroke="#8f4f1e" stroke-width="2"/>
+  <ellipse id="paw2" cx="273" cy="354" rx="8" ry="5.5" fill="#e8b87a" stroke="#8f4f1e" stroke-width="2"/>
+</svg>
+<script>
+(function(){
+  var TWO_PI=Math.PI*2;
+  function gearPath(cx,cy,innerR,outerR,N){
+    var d='';
+    for(var i=0;i<N;i++){
+      var a1=i/N*TWO_PI, a2=a1+0.16;
+      var x1=cx+innerR*Math.cos(a1),y1=cy+innerR*Math.sin(a1);
+      var x2=cx+outerR*Math.cos(a1),y2=cy+outerR*Math.sin(a1);
+      var x3=cx+outerR*Math.cos(a2),y3=cy+outerR*Math.sin(a2);
+      var x4=cx+innerR*Math.cos(a2),y4=cy+innerR*Math.sin(a2);
+      d+='M'+x1.toFixed(1)+','+y1.toFixed(1)+'L'+x2.toFixed(1)+','+y2.toFixed(1)+'L'+x3.toFixed(1)+','+y3.toFixed(1)+'L'+x4.toFixed(1)+','+y4.toFixed(1)+'Z ';
+    }
+    return d;
+  }
+  document.getElementById('gear1Teeth').setAttribute('d',gearPath(230,350,58,70,20));
+  document.getElementById('gear2Teeth').setAttribute('d',gearPath(430,350,130,135,24));
+
+  var CX=230,CY=350,HANDLE_R=38;
+  var SHOULDER={x:292,y:350};
+  var CRANK_PERIOD=2.2;
+  var RATIO=63/135;          /* 大齿轮/小齿轮齿数比，同轴齿轮同步 */
+  var BUCKET_BASE=440,BUCKET_AMP=10,BUCKET_PERIOD=4.4;
+
+  var crank=document.getElementById('crankGroup');
+  var smallGear=document.getElementById('smallGearGroup');
+  var drum=document.getElementById('drumGroup');
+  var rope=document.getElementById('rope');
+  var bucket=document.getElementById('bucketGroup');
+  var arm1=document.getElementById('arm1');
+  var arm2=document.getElementById('arm2');
+  var paw1=document.getElementById('paw1');
+  var paw2=document.getElementById('paw2');
+
+  function setLine(el,x1,y1,x2,y2){
+    el.setAttribute('x1',x1.toFixed(2));el.setAttribute('y1',y1.toFixed(2));
+    el.setAttribute('x2',x2.toFixed(2));el.setAttribute('y2',y2.toFixed(2));
+  }
+  function deg(a){return (a*180/Math.PI).toFixed(2);}
+
+  function tick(now){
+    var t=now/1000;
+    var theta=t*TWO_PI/CRANK_PERIOD;        /* 摇柄角（持续旋转） */
+    var gearAngle=-theta*RATIO;             /* 齿轮反向联动 */
+
+    crank.setAttribute('transform','rotate('+deg(theta)+','+CX+','+CY+')');
+    smallGear.setAttribute('transform','rotate('+deg(gearAngle)+',430,350)');
+    drum.setAttribute('transform','rotate('+deg(gearAngle)+',430,350)');
+
+    var bucketY=BUCKET_BASE+BUCKET_AMP*Math.sin(t*TWO_PI/BUCKET_PERIOD);
+    bucket.setAttribute('transform','translate(0,'+(bucketY-BUCKET_BASE).toFixed(2)+')');
+    rope.setAttribute('y2',(bucketY-8).toFixed(2));
+
+    var px=CX+HANDLE_R*Math.cos(theta);
+    var py=CY+HANDLE_R*Math.sin(theta);
+    setLine(arm1,SHOULDER.x,SHOULDER.y,px,py);
+    setLine(arm2,SHOULDER.x+6,SHOULDER.y-2,px+5,py+4);
+    paw1.setAttribute('cx',px.toFixed(2));
+    paw1.setAttribute('cy',py.toFixed(2));
+    paw2.setAttribute('cx',(px+5).toFixed(2));
+    paw2.setAttribute('cy',(py+4).toFixed(2));
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>
