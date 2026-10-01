@@ -69,6 +69,7 @@
 ## 关键结论（速览）
 
 - **能跑**：PPL **6.1129**（判据 ≤6.8，智力不塌）。
+- **能写**：模型能独立写出**现在就能跑**的图形程序——7 个作品全部本机实机产出（5 个纯 SVG + 2 个 Three.js 3D），见下方[「模型实机产出」](#模型实机产出)。
 - **省显存**：16GB 卡全程运行，k8v4 256K 满上下文满血 15.36 GiB。
 - **快（5080 实测，10-01 真实负载配对）**：
   - **DFlash2 K=7 = 速度优先档（启动器默认）**：180K/nvfp4 端到端 **230~245 tok/s**、解码峰值 **303 t/s**、prefill 最高 **2.68k tok/s**；
@@ -82,6 +83,38 @@
 > **5080 实测截图**（modlens 运行日志，2026-09-27）：
 > 
 > ![modlens-5080-实测](docs/images/modlens-5080-20260927.png)
+
+## 模型实机产出
+
+**下面每一个 HTML 都是 Bonsai-2-27B（三元量化）模型在本机跑出来的，不是人手写的代码。** 这是"智力不塌"的侧证：模型能独立写出现在就能跑的图形程序。完整清单与查看方式见 [`docs/demos/README.md`](docs/demos/README.md)。
+
+### 🌩️ 灯塔风暴 · Canvas 2D · 14.5 KB · 零依赖
+
+![灯塔风暴](docs/images/demos/lighthouse-storm-20261001.png)
+
+### 🐝 机械蜜蜂 · Three.js 交互 · 25.2 KB
+
+![机械蜜蜂](docs/images/demos/mech-bee-20261001.png)
+
+### 🚚 AEGIS-9 未来工业重型机械卡车 · Three.js · 22.1 KB
+
+![AEGIS-9](docs/images/demos/aegis9-truck-20261001.png)
+
+### 🕐 蜻蜓钟表（两版）· 纯 SVG · 5.2 KB / 9.4 KB · 零依赖
+
+![蜻蜓钟表](docs/images/demos/dragonfly-clock-20261001.png)
+
+![老式机械钟表上的蜻蜓](docs/images/demos/clock-dragonfly-20261001.png)
+
+### 🐦 鹈鹕夜骑 · 纯 SVG 动画 · 13.1 KB · 零依赖
+
+![鹈鹕夜骑](docs/images/demos/pelican-night-ride-20261001.png)
+
+### 🐿️ 松鼠手摇提桶 · 纯 SVG · 8.8 KB · 零依赖
+
+![松鼠手摇提桶](docs/images/demos/squirrel-bucket-20261001.png)
+
+> ⚠️ **如实记录**：AEGIS-9 控制台报 13 条 `computeBoundingSphere(): Computed radius is NaN`，症状是甲板货箱组不渲染（其余部件正常）。这是模型生成代码的真实 bug，**保留原样未做修改**。详见 [`docs/demos/README.md`](docs/demos/README.md)。
 
 ## 近期优化速览（2026-09-27 ~ 09-28）
 
