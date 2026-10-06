@@ -1,4 +1,6 @@
 @echo off
+rem  Host RAM: pins ~9.2 GiB (host KV 8.0 + host state 1.15); needs
+rem    >=~16 GB free RAM or startup fails. Lower via --host-kv-mib / --host-state-slots.
 title Ninfer Serve - Agent Dev v2 (k8v4 / FULL 256K ctx / MTP K=2) [A+B]
 rem ============================================================
 rem  Agent Dev profile ULTIMATE v2: k8v4 KV, FULL 262144 ctx,

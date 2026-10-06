@@ -1,4 +1,6 @@
 @echo off
+rem  Host RAM: pins ~9.2 GiB (host KV 8.0 + host state 1.15); needs
+rem    >=~16 GB free RAM or startup fails. Lower via --host-kv-mib / --host-state-slots.
 title Ninfer Serve - Long-Doc EN v2 (bf16 / 32K ctx / DFlash2 K=7) [A+B]
 rem ============================================================
 rem  EN long-form profile v2: DFlash2 draft-tokens=7 + lm-head-draft

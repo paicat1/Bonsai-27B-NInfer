@@ -8,7 +8,7 @@ import os
 import subprocess
 import sys
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog, simpledialog
+from tkinter import ttk, messagebox, simpledialog
 
 # ---------------------------------------------------------------
 # 常量：路径与基础参数
@@ -266,22 +266,22 @@ def build_command(combo, port=None):
     model_val = combo.get("model", "normal")
     artifact = MODEL_OPTIONS[model_val][1] if model_val in MODEL_OPTIONS else MODEL_OPTIONS["normal"][1]
     cmd = [exe, artifact, "--host", "127.0.0.1", "--port", str(port)]
-    cmd.extend(THINK_OPTIONS[combo.get("think", "on")][1])
+    # 防御：profile 可能含旧/未知键值 —— 一律 .get(key, 默认) 回退，避免直接下标 KeyError（D8）
+    cmd.extend(THINK_OPTIONS.get(combo.get("think", "on"), THINK_OPTIONS["on"])[1])
     tb = combo.get("tb", "none")
-    if tb != "none":
+    if tb in TB_OPTIONS and tb != "none":
         cmd.extend(TB_OPTIONS[tb][1])
-    cmd.extend(MAXOUT_OPTIONS[combo.get("maxout", "default")][1])
-    cmd.extend(KV_OPTIONS[combo.get("kv", "bf16")][1])
+    cmd.extend(MAXOUT_OPTIONS.get(combo.get("maxout", "default"), MAXOUT_OPTIONS["default"])[1])
+    cmd.extend(KV_OPTIONS.get(combo.get("kv", "bf16"), KV_OPTIONS["bf16"])[1])
     kvcap = combo.get("kvcap", "default")
-    if kvcap != "default":
+    if kvcap in KVCAP_OPTIONS and kvcap != "default":
         cmd.extend(KVCAP_OPTIONS[kvcap][1])
-    cmd.extend(CTX_OPTIONS[combo.get("ctx", "32k")][1])
-    cmd.extend(SPEC_OPTIONS[combo.get("spec", "k0")][1])
+    cmd.extend(CTX_OPTIONS.get(combo.get("ctx", "32k"), CTX_OPTIONS["32k"])[1])
+    cmd.extend(SPEC_OPTIONS.get(combo.get("spec", "k0"), SPEC_OPTIONS["k0"])[1])
     # 视觉：--vision
     vision = combo.get("vision", "off")
     if vision == "on":
         cmd.extend(VISION_OPTIONS["on"][1])
-    # prefill 内核：三选一互斥，环境变量注入（s8 与 wide/mma 不可同开，同一时刻引擎只走一条）
     # prefill 内核：三选一互斥，环境变量注入（s8 与 wide/mma 不可同开，同一时刻引擎只走一条）
     prefill_val = combo.get("prefill", "s8")
     env_prefill = None
@@ -290,9 +290,9 @@ def build_command(combo, port=None):
         env_prefill = PREFILL_OPTIONS[prefill_val][1]["prefill"]
         env_s8 = PREFILL_OPTIONS[prefill_val][1]["s8"]
     conc = combo.get("conc", "1")
-    if conc != "1":
+    if conc in CONC_OPTIONS and conc != "1":
         cmd.extend(CONC_OPTIONS[conc][1])
-    cmd.extend(SAMPLE_OPTIONS[combo.get("sample", "default")][1])
+    cmd.extend(SAMPLE_OPTIONS.get(combo.get("sample", "default"), SAMPLE_OPTIONS["default"])[1])
     preserve = combo.get("preserve", "off")
     if preserve == "on":
         cmd.extend(PRESERVE_OPTIONS["on"][1])
@@ -308,14 +308,22 @@ def load_profiles():
         try:
             with open(CONFIG_FILE, "r", encoding="utf-8") as f:
                 return json.load(f)
-        except Exception:
+        except Exception as e:
+            # 不静默：损坏时留痕（原文件不改动，可手工修复）——避免“一次崩溃后命名组合无声消失”（D5）
+            print(f"[profiles] 读取失败（{CONFIG_FILE}）：{e}")
+            print("[profiles] 已回退为空集；原文件未改动，可手工修复。")
             return {}
     return {}
 
 
 def save_profiles(profiles):
-    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+    # 原子写：先写临时文件 + fsync，再 os.replace，避免崩溃/断电把全部命名组合写坏或写空（D5）
+    tmp = CONFIG_FILE + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         json.dump(profiles, f, ensure_ascii=False, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp, CONFIG_FILE)
 
 
 # ---------------------------------------------------------------
