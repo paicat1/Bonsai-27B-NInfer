@@ -47,7 +47,10 @@ HeadProfile resolve_profile(QType qtype, std::int32_t head_rows, std::int32_t in
     if (head_rows == detail::kLinearTopKOptimizedRows && qtype == QType::Q4G64_F16S) {
         return HeadProfile::Q4Optimized;
     }
-    throw std::invalid_argument("linear_topk: unsupported head profile");
+    // No registered profile for this output head (e.g. a ternary / PQ2_0 folded output head).
+    throw std::invalid_argument(
+        "linear_topk: unsupported head profile (output-head format not registered for linear_topk; "
+        "a ternary output head must use the optimized proposal head -- pass --lm-head-draft)");
 }
 
 struct Plan {

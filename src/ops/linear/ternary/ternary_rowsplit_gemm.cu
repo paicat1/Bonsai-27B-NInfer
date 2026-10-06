@@ -25,7 +25,8 @@ namespace {
 
 // Which kernel serves prefill (T >= 5).
 //
-//   unset / mma  tensor-core path (ternary_rowsplit_mma.cuh) -- the measured default
+//   unset / wide  wide-token-tile weight-resident path (ternary_rowsplit_mma_wide_t.cuh) -- the default
+//   mma           tensor-core path (ternary_rowsplit_mma.cuh) -- A/B arm (byte-identical to wide)
 //   block        token-blocked SIMT GEMV, kept as the fallback and as an A/B arm
 //   ref          the correctness-first reference kernel, the oracle for both
 //
@@ -336,8 +337,8 @@ void launch_ternary_mma(const Tensor& x, const Weight& w, Tensor& out,
 // (ternary_rowsplit_mma_wide_t.cuh). Replaces the per-8-token weight re-read of small_t with a
 // per-64-token window, so one forward pass reads the weights ceil(T/64) times instead of
 // ceil(T/8) -- the mechanism behind the author's measured prefill ~2x. Admission mirrors
-// mma_wide_admits: PQ2_0, unpadded whole-group K, and no high plane. Selected only when
-// NINFER_TERNARY_PREFILL=wide (A/B arm; default stays Mma until engine-side A/B passes).
+// mma_wide_admits: PQ2_0, unpadded whole-group K, and no high plane. This is the default prefill
+// rung (NINFER_TERNARY_PREFILL=wide or unset); set =mma to fall back to the tensor-core prefill.
 void launch_ternary_mma_wide(const Tensor& x, const Weight& w, Tensor& out,
                              std::int32_t out_row_stride, cudaStream_t stream) {
     const std::int32_t rows = w.n;
@@ -459,7 +460,7 @@ void launch_ternary_gemm_t8(const Tensor& x, const Weight& w, Tensor& out,
     // Wide-token-tile prefill (weight-resident): author ternary line's prefill rung. Same tensor-core
     // family as the mma path below but stages the weight window once per 64-token tile instead of
     // re-reading it per 8-token tile, cutting the weight pass count from ceil(T/8) to ceil(T/64).
-    // NINFER_TERNARY_PREFILL=wide enables it (A/B arm; default stays Mma until engine-side A/B).
+    // NINFER_TERNARY_PREFILL=wide (or unset) selects it -- the default; =mma falls back to Mma.
     if (prefill_route() == PrefillRoute::Wide && x.ne[1] >= ternary_wide_min_tokens() &&
         gemv_admits(x, w, std::numeric_limits<std::int32_t>::max())) {
         launch_ternary_mma_wide(x, w, out, out_row_stride, stream);
